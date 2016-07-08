@@ -175,6 +175,9 @@
         if (t === undefined) {
             setTimeout(loadMessages, 500);
         }
+        if ($("#chatWrapper>div:nth-child(2)").attr("id") == "chatMessageWrapper") {
+            $("#channelTabListWrapper").insertBefore("#chatMessageListWrapper");
+        }
     }
 
     function init()
@@ -787,7 +790,7 @@
          * CSS
          */
         $("<style>").text("\
-#channelTabListWrapper{margin-bottom: -5px;position: relative;}#channelTabList{overflow: hidden;border-radius: 4px 4px 0 0;font-size: 9pt;}\
+#channelTabListWrapper{margin-bottom: -1px;position: relative;}#channelTabList{overflow: hidden;border-radius: 4px 4px 0 0;font-size: 9pt;}\
 .ToASettings, .channelTab{cursor: pointer;margin: 2px 2px 0 2px;border-radius: 4px 4px 0 0;display: inline-block;padding: 2px 5px;position:relative;}\
 #chatMessageList li{display: none;}\
 #chatMessageList li.processed{display: list-item;}\
@@ -815,6 +818,7 @@
 .hand{curson: pointer;}\
 #ToASChMAddGroup, .ToASChMChGRemove{margin-top: 0;}\
 .incsort{border-radius: 0 !important; margin: 3px 1px; padding: 2px;}\
+.chTabSelected {background-image: " + $("#navigationWrapper > h5").css("background-image")+" !important;})\
 @media screen and (max-width:768px){#ToASettingsWindow{left:5%;}}").appendTo("body");
     }
 
