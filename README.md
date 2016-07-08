@@ -8,7 +8,7 @@ Sorts messages in chat under channel tabs and adds several new features built ar
 ------------
 ## Notes
 ### Fair warning
-While I have **no intention of harming you** [*I like RoA and, for the most part, the community*] with my work, this is a ***custom JavaScript code*** and you ***should not trust and install just any script you find on the internet***. Get someone that knows a bit of programming to check it for you if you are unsure!
+While I have **no intention of harming you** with my work, this is a ***custom JavaScript code*** and you ***should not trust and install just any script you find on the internet***. Get someone that knows a bit of programming to check it for you if you are unsure!
 
 ### Disclaimer
 This script is a **Work In Progress** or *WIP*, while I tried hard to iron out as many bugs as I could find, only a handful of people tested it for me, so be prepared in case you run into a problem :) If you update me on it [*via a message on RoA or in the issue tracker here on github*] I'll do my best to fix as soon as possible!
@@ -27,7 +27,7 @@ And then [click here](https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfA
  - You can **sort the channel tabs** to your likings [*just drag and drop*]
  - **On tab new message in channel count**
  - Fair few **[options](http://i.imgur.com/wcJIH57.png) are available to customize ToA** [*applied on change with no need to reload*]
- - **Channel tab preview of new messages sent to that channel** [*if enabled in options*]
+ - **Channel tab preview of new messages sent to that channel** [*if enabled in options*]<br>
 ![Channel tab new messages preview window](http://i.imgur.com/bZpopVZ.png)
   - On preview window **channel actions**, also available **as [context menu options](http://i.imgur.com/CcweTo6.png)** (*right click*)
   - All these channel options **can be dissabled** in ToA options
@@ -36,12 +36,12 @@ And then [click here](https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfA
   - Messages received will be removed instantly
   - Muted channel will have it's new message counter disabled and if you remove the tab, it will not be created again
   - Muted channels can be un-muted from *context menu* or *channel manager*
- - **Channel Manager**
+ - **Channel Manager**<br>
 ![](http://i.imgur.com/G7QPkzd.png "Channel Manager")
  - **Muted Channels** manager
   - You can remove previously muted channel from here
  - **INTRODUCING: Channel merger**
-  - Simply put, merged channels effectively means this
+  - Simply put, merged channels effectively means this<br>
 ![](http://i.imgur.com/QmhWWKc.png)
   - Any grouped channels will be displayed under the same tab.
   - As shown on the screenshot, channels `TabsOfAvabur` and `rowrewamped` are bost displayed when the `#Reltos' addons` tab is active.
@@ -51,7 +51,7 @@ And then [click here](https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfA
   - Or you can delete it, at which point all messages sorted under it will go into their respective channel tabs
    - ***Note***: *This being the newest feature, be advised that it can have some bugs or unexpected behavior*
  - **Three profile tooltip actions**
-  - Profile tooltips across the game will have 3 new actions
+  - Profile tooltips across the game will have 3 new actions<br>
  ![](http://i.imgur.com/0wKXgdC.png)
   - The letter in sqare brackets `[]` is, as per usual, the triggering key for given action
    - **Nickname** [*lets you un/nickname the user*]

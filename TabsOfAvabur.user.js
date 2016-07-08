@@ -1,10 +1,12 @@
 // ==UserScript==
 // @name         TabsOfAvabur
-// @namespace    Reltrakii_Magic_World
-// @version      3.0.1RC
+// @namespace    Reltorakii.magic
+// @version      3.0.2RC
 // @description  Tabs the channels it finds in chat, can be sorted, with notif for new messages
 // @author       Reltorakii
 // @match        https://*.avabur.com/game.php
+// @downloadURL  https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js
+// @updateURL    https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js
 // @grant        none
 // ==/UserScript==
 /* jshint -W097 */
@@ -53,6 +55,7 @@
     var lastMoTDContent         = "";
 
     var showingReconnectMsg     = false;
+    var internalUpdateUrl       = "https://api.github.com/repos/edvordo/TabsOfAvabur/contents/TabsOfAvabur.user.js";
 
     var hovering;
     var hoveringOverTab;
@@ -81,7 +84,7 @@
                 var isWire          = plainText.match(/^\[[^\]]+\]\s*(You|[a-zA-Z]+)\s*wired\s*.*\s*(you|[a-zA-Z]+)\.$/);
                 // [11:11:11] Username sent a whatever to you.
 
-                var isChatNotif     = $(e).children(".chat_notification").length > 0;
+                var isChatNotif     = $(e).children(".chat_notification").length > 0 || $(e).hasClass("chat_notification");
                 var isChatReconnect = $(e).attr("id") === "websocket_reconnect_line";
                 var channel         = currentChannel;
                 var channelInfo     = resolveChannelID(channel);
@@ -187,6 +190,7 @@
         prepareHTML();
         addSettingsTab();
         loadMessages();
+        checkForUpdate();
 
         $("#channelTabListWrapper").mCustomScrollbar({axis:"x",advanced:{autoExpandHorizontalScroll:true}});
         $("#channelTabList").sortable({items:".channelTab",distance: 5});
@@ -1078,6 +1082,26 @@
             chatDirection = decide;
         }
     }
+
+    function checkForUpdate() {
+        var varsion = "";
+        $.get(internalUpdateUrl).done(function(res){
+            var match = atob(res.content).match(/\/\/\s+@version\s+([^\n]+)/);
+                version = march[1];
+        });
+        if (options.version < version) {
+            var message = '<li class="chat_notification">TabsOfAvabur has been updated to version '+version+'! <a href="https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js" target="_blank">Update</a> | <a href="https://github.com/edvordo/TabsOfAvabur/releases" target="_blank">Changelog</a></li>';
+            if (chatScroll == "up") {
+                $("#chatMessageList").prepend(message);
+            } else {
+                $("#chatMessageList").append(message);
+                $("#chatMessageWrapper").mCustomScrollbar("scrollTo", "bottom");
+            }
+        } else {
+            setTimeout(checkForUpdate, 24*60*60*1000);
+        }
+    }
+
     $(document).on("ajaxSuccess", handleAjaxSuccess);
 
     $(document).on("change", ".settingsChanger", function(e){
