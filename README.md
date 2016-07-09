@@ -25,6 +25,7 @@ And then [click here](https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfA
  * **Sorts messages in chat into their respective channel tab** [*the obvious one* ^.^]
  * You can **sort the channel tabs** to your likings [*just drag and drop*]
  * **On tab new message in channel count**
+ * ToA **respects** your **chat direction setting**
  * Fair few **[options](http://i.imgur.com/wcJIH57.png) are available to customize ToA** [*applied on change with no need to reload*]
  * **Channel tab preview of new messages sent to that channel** [*if enabled in options*]<br>
 ![Channel tab new messages preview window](http://i.imgur.com/bZpopVZ.png)

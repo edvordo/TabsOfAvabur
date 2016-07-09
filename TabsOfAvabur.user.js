@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TabsOfAvabur
 // @namespace    Reltorakii.magic
-// @version      3.0.2RC
+// @version      3.0.3RC
 // @description  Tabs the channels it finds in chat, can be sorted, with notif for new messages
 // @author       Reltorakii
 // @match        https://*.avabur.com/game.php
@@ -36,7 +36,7 @@
             },
             mutedChannels   : []
         },
-        version: "3.0.1RC"
+        version: "3.0.3RC"
     };
     var groupsMap               = {};
     var channelLog              = {};
@@ -86,7 +86,16 @@
 
                 var isChatNotif     = $(e).children(".chat_notification").length > 0 || $(e).hasClass("chat_notification");
                 var isChatReconnect = $(e).attr("id") === "websocket_reconnect_line";
-                var channel         = currentChannel;
+
+                var channel = "";
+                if (currentChannel.match(/^[0-9]+$/)){
+                    channel = channelLog[currentChannel].channelName;
+                } else if (currentChannel.indexOf(MergedChannelsGroup) === 0) {
+                    channel = channelLog[currentChannel].channelName;
+                } else {
+                    channel = currentChannel;
+                }
+                // var channel         = currentChannel=="Main" ? currentChannel : ;
                 var channelInfo     = resolveChannelID(channel);
 
                 if (defaultMsg !== null) {
@@ -128,6 +137,7 @@
                     channel         = "Info Channel";
                 }
                 var channelColor    = resolveChannelColor(channelID, channelInfo.name);
+
                 if (options.channelsSettings.channelMerger.mapping[channel] !== undefined) {
                     var groupName   = options.channelsSettings.channelMerger.mapping[channel];
                     var groupID     = options.channelsSettings.channelMerger.groups.indexOf(groupName);
@@ -190,12 +200,12 @@
         prepareHTML();
         addSettingsTab();
         loadMessages();
-        checkForUpdate();
 
         $("#channelTabListWrapper").mCustomScrollbar({axis:"x",advanced:{autoExpandHorizontalScroll:true}});
         $("#channelTabList").sortable({items:".channelTab",distance: 5});
         $("#channelTabList").disableSelection();
-        setTimeout(function(){$("#channelTab"+mainChannelID).click();},1500);
+        setTimeout(function(){$("#channelTabList > div:nth-child(2)").click();},2000);
+        setTimeout(checkForUpdate,30000);
     }
 
     function returnCustomID(channel, resolved, name, on) {
@@ -249,6 +259,9 @@
                 channelID = $(e).attr("value");
             }
         });
+        if (options.channelsSettings.channelMerger.groups.indexOf(origChannelName) !== -1) {
+            channelID = MergedChannelsGroup + "_MCGID_" + groupsMap[origChannelName];
+        }
 
         if (channelID === 0) {
             resolved = false;
@@ -1069,12 +1082,12 @@
         var valid = ["up", "down"];
         if (json.hasOwnProperty("cs")) {
             if (valid.indexOf(json.cs) !== -1) {
-                console.log(json);
+                // console.log(json);
                 decide = json.cs;
             }
         } else if (json.hasOwnProperty("p") && json.p.hasOwnProperty("chatScroll")) {
             if (valid.indexOf(json.p.chatScroll) !== -1) {
-                console.log(json);
+                // console.log(json);
                 decide = json.p.chatScroll;
             }
         }
@@ -1084,22 +1097,23 @@
     }
 
     function checkForUpdate() {
-        var varsion = "";
+        var version = "";
         $.get(internalUpdateUrl).done(function(res){
             var match = atob(res.content).match(/\/\/\s+@version\s+([^\n]+)/);
-                version = march[1];
-        });
-        if (options.version < version) {
-            var message = '<li class="chat_notification">TabsOfAvabur has been updated to version '+version+'! <a href="https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js" target="_blank">Update</a> | <a href="https://github.com/edvordo/TabsOfAvabur/releases" target="_blank">Changelog</a></li>';
-            if (chatScroll == "up") {
-                $("#chatMessageList").prepend(message);
+                version = match[1];
+
+            if (options.version < version) {
+                var message = '<li class="chat_notification">TabsOfAvabur has been updated to version '+version+'! <a href="https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js" target="_blank">Update</a> | <a href="https://github.com/edvordo/TabsOfAvabur/releases" target="_blank">Changelog</a></li>';
+                if (chatDirection == "up") {
+                    $("#chatMessageList").prepend(message);
+                } else {
+                    $("#chatMessageList").append(message);
+                    $("#chatMessageWrapper").mCustomScrollbar("scrollTo", "bottom");
+                }
             } else {
-                $("#chatMessageList").append(message);
-                $("#chatMessageWrapper").mCustomScrollbar("scrollTo", "bottom");
+                setTimeout(checkForUpdate, 24*60*60*1000);
             }
-        } else {
-            setTimeout(checkForUpdate, 24*60*60*1000);
-        }
+        });
     }
 
     $(document).on("ajaxSuccess", handleAjaxSuccess);
@@ -1501,6 +1515,7 @@
                         delete groupsMap[groupName];
                         $("#chatMessageList li").attr("class", "");
                         saveOptions();
+                        $("#channelTabList > div:nth-child(2)").click();
                         loadMessages("reload");
                         $("#ToASettings").click();
                     }
