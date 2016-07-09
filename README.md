@@ -2,7 +2,7 @@
 Sorts messages in chat under channel tabs and adds several new features built around chat.
 
 ## Preview
-![Tabs of avabur ingame](http://i.imgur.com/S3QWRna.png "This is what ToA will look like in your game")
+![Tabs of avabur ingame](http://i.imgur.com/renrcv1.png "This is what ToA will look like in your game")
 
 
 ## Notes
