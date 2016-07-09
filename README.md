@@ -4,7 +4,7 @@ Sorts messages in chat under channel tabs and adds several new features built ar
 ## Table of Contents
 
  * [Preview](#preview)
- * [Notest](#notes)
+ * [Notes](#notes)
    * [Fair warning](#fair-warning)
    * [Disclaimer](#disclaimer)
    * [How to install](#how-to-install)
@@ -68,3 +68,4 @@ And then [click here](https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfA
    * **Quickscope** [*sends* `/whois username`]
    * All of these can be disabled in ToA options
  * You'll get a notification in chat when I update ToA :smiley:
+ * Can be updated ia script managers!
