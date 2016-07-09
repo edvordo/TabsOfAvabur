@@ -1,6 +1,15 @@
 # Tabs of Avabur
 Sorts messages in chat under channel tabs and adds several new features built around chat.
 
+## Table of Contents
+
+ * [Preview](#preview)
+ * [Notest](#notes)
+   * [Fair warning](#fair-warning)
+   * [Disclaimer](#disclaimer)
+   * [How to install](#how-to-install)
+ * [Features](#features)
+
 ## Preview
 ![Tabs of avabur ingame](http://i.imgur.com/renrcv1.png "This is what ToA will look like in your game")
 
@@ -10,7 +19,7 @@ Sorts messages in chat under channel tabs and adds several new features built ar
 While I have **no intention of harming you** with my work, this is a ***custom JavaScript code*** and you ***should not trust and install just any script you find on the internet***. Get someone that knows a bit of programming to check it for you if you are unsure!
 
 ### Disclaimer
-This script is a **Work In Progress** or *WIP*, while I tried hard to iron out as many bugs as I could find, only a handful of people tested it for me, so be prepared in case you run into a problem :) If you update me on it [*via a message on RoA or in the issue tracker here on github*] I'll do my best to fix as soon as possible!
+This script is a **Work In Progress** or *WIP*, while I tried hard to iron out as many bugs as I could find, only a handful of people tested it for me, so be prepared in case you run into a problem :smiley: If you update me on it [*via a message on RoA or in the issue tracker here on github*] I'll do my best to fix as soon as possible!
 
 ### How to install
 The easiest way to use ToA is to install a browser Script Manager extension
@@ -58,3 +67,4 @@ And then [click here](https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfA
    * **@mention** [*inserts @username handle at the end of the chat message*]
    * **Quickscope** [*sends* `/whois username`]
    * All of these can be disabled in ToA options
+ * You'll get a notification in chat when I update ToA :smiley:
