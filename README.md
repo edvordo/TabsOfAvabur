@@ -1,6 +1,8 @@
 # Tabs of Avabur
 Sorts messages in chat under channel tabs and adds several new features built around chat.
 
+[![](http://i.imgur.com/plbjGP5.png "Click to install ^^")](https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js)
+
 ## Table of Contents
 
  * [Preview](#preview)
