@@ -10,6 +10,7 @@ Sorts messages in chat under channel tabs and adds several new features built ar
    * [Fair warning](#fair-warning)
    * [Disclaimer](#disclaimer)
    * [How to install](#how-to-install)
+     * [Warning](#warning)
  * [Features](#features)
 
 ## Preview
@@ -30,6 +31,9 @@ The easiest way to use ToA is to install a browser Script Manager extension
  * [Greasemonkey](http://www.google.com/search?q=greasemonkey) - Firefox, QuPZilla, ..
 
 And then [click here](https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js) to install Tabs of Avabur
+
+#### Warning
+In case you had previous versions of ToA (prior to the 3.0 version) installed, this installation creates a new entry for ToA. Check and make sure you do not have multiple versions of ToA running before you reload the game. You can safely remove the old entry for ToA. :blush:
 
 ## Features
 
