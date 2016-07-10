@@ -64,6 +64,7 @@ In case you had previous versions of ToA (prior to the 3.0 version) installed, t
      * You can put as many channel into one group as you like
      * You can rename the channel group
      * Or you can delete it, at which point all messages sorted under it will go into their respective channel tabs
+     * The first channel in a list within a group will be the one ToA will try to set as an active one!
      * ***Note***: *This being the newest feature, be advised that it can have some bugs or unexpected behavior*
  * **Three profile tooltip actions**
    * Profile tooltips across the game will have 3 new actions<br>
