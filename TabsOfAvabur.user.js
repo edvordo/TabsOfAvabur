@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TabsOfAvabur
 // @namespace    Reltorakii.magic
-// @version      3.0.4
+// @version      3.0.5
 // @description  Tabs the channels it finds in chat, can be sorted, with notif for new messages
 // @author       Reltorakii
 // @match        https://*.avabur.com/game.php
@@ -37,7 +37,7 @@
             },
             mutedChannels   : []
         },
-        version: "3.0.4"
+        version: "3.0.5"
     };
     var groupsMap               = {};
     var channelLog              = {};
@@ -184,7 +184,7 @@
                     $(e).html($(e).html().replace(/\/join\s+([^\s]+)\s*([^\s<]+)?/, '/join <a class="joinChannel">$1</a> <span class="jcPWD">$2</span>'));
                 }
 
-                if (plainText.match(/tabs\s*of\s*avabur/i) !== null) {
+                if (plainText.match(/tabs\s+of\s+avabur/i) !== null) {
                     clearTimeout(checkForUpdateTimer);
                     checkForUpdateTimer = setTimeout(checkForUpdate, randomInt(30, 120) * 1000);
                 }
