@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TabsOfAvabur
 // @namespace    Reltorakii.magic
-// @version      3.0.5
+// @version      3.0.6
 // @description  Tabs the channels it finds in chat, can be sorted, with notif for new messages
 // @author       Reltorakii
 // @match        https://*.avabur.com/game.php
@@ -37,7 +37,7 @@
             },
             mutedChannels   : []
         },
-        version: "3.0.5"
+        version: "3.0.6"
     };
     var groupsMap               = {};
     var channelLog              = {};
@@ -94,6 +94,8 @@
                 if (currentChannel.match(/^[0-9]+$/)){
                     channel = channelLog[currentChannel].channelName;
                 } else if (currentChannel.indexOf(MergedChannelsGroup) === 0) {
+                    channel = channelLog[currentChannel].channelName;
+                } else if (scriptChannels.indexOf(currentChannel) !== -1) {
                     channel = channelLog[currentChannel].channelName;
                 } else {
                     channel = currentChannel;
@@ -322,7 +324,7 @@
             tab = $("#channelTab" + channel.channelID);
         }
         var channelTabLabel = "#"+channel.channelName;
-        tab.text(channelTabLabel);
+        tab.text(channelTabLabel).css({color: channel.channelColor});
         if (channel.newMessages && !channel.muted) {
 
             if ($(".Ch"+channel.channelID+"Badge").length === 0) {
@@ -536,7 +538,7 @@
 
         $("<a>")
             .attr("id", "chTabCTMenuColor")
-            .text("Temp tab color")
+            .text("Change color")
             .addClass("cctmButton")
             .appendTo("#channelTabContextMenu");
 
@@ -1196,6 +1198,16 @@
         $("#chatSendMessage").click();
     });
 
+    $(document).on("click", "#chTabCTMenuColor", function(){
+        if (hoveringOverTab.indexOf(MergedChannelsGroup) !== -1) {
+            var color = randomColor();
+            channelLog[hoveringOverTab].channelColor = color;
+            updateChannelList(channelLog[hoveringOverTab]);
+        } else {
+            $.alert('Tab color change failed! Please try again!', 'Group tab color change');
+        }
+    });
+
     $(document).on("click", "#chTabCTMenuMute", function(){
         if (hoveringOverTab === undefined){
             return;
@@ -1351,7 +1363,7 @@
             $("#chTabCTMenuColor").hide();
             $("#chTabCTMenuLeave").show();
         }
-        $("#chTabCTMenuColor").hide();
+        // $("#chTabCTMenuColor").hide();
 
         $("#channelTabContextMenu").css(cssOptions).show();
         $("#channelPreviewWrapper").hide();
