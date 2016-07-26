@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TabsOfAvabur
 // @namespace    Reltorakii.magic
-// @version      3.0.6
+// @version      3.0.7
 // @description  Tabs the channels it finds in chat, can be sorted, with notif for new messages
 // @author       Reltorakii
 // @match        https://*.avabur.com/game.php
@@ -37,7 +37,7 @@
             },
             mutedChannels   : []
         },
-        version: "3.0.6"
+        version: "3.0.7"
     };
     var groupsMap               = {};
     var channelLog              = {};
@@ -48,6 +48,8 @@
     var WhispersChannel         = "UW_7593725_3480021_CHC";
     var WiresChannel            = "WC_0952340_3245901_CHC";
     var MergedChannelsGroup     = "MCG_105704_4581101_CHC";
+
+    var GlobalChannel           = 1000000000;
     var chatDirection           = "up";
 
     var scriptChannels          = [ServerMessagesChannel, CMDResposeChannel, WhispersChannel, WiresChannel];
@@ -224,6 +226,7 @@
 
     function resolveChannelID(channel)
     {
+        // console.log(channel);
         var channelID;
         var origChannelName = channel;
         var resolved = true;
@@ -273,6 +276,10 @@
             channelID = MergedChannelsGroup + "_MCGID_" + groupsMap[origChannelName];
         }
 
+        if (origChannelName == "GLOBAL"){
+            channelID = GlobalChannel;
+        }
+
         if (channelID === 0) {
             resolved = false;
             channelID = "2";// Main
@@ -285,7 +292,7 @@
     {
         var color = "";
         try {
-            color = $(".chatChannel[data-id=\"" + channelName + "]").css("background-color");
+            color = $(".chatChannel[data-id=\"" + channelName + "\"]").css("background-color");
         } catch (e) {}
         if (color === "" || color === undefined) {
             $(".chatChannel").each(function(i,e){
@@ -994,6 +1001,11 @@
                 createChannelEntry(channelInfo.on, channelID, channelColor);
             }
         });
+        if (channelLog[GlobalChannel] === undefined) {
+            createChannelEntry("GLOBAL", GlobalChannel, resolveChannelColor(GlobalChannel, "Global"));
+        } else {
+            console.log(channelLog[GlobalChannel]);
+        }
     }
 
     function createChannelEntry(channel, channelID, channelColor) {
