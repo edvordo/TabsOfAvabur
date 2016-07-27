@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TabsOfAvabur
 // @namespace    Reltorakii.magic
-// @version      3.0.7
+// @version      3.0.8
 // @description  Tabs the channels it finds in chat, can be sorted, with notif for new messages
 // @author       Reltorakii
 // @match        https://*.avabur.com/game.php
@@ -37,7 +37,7 @@
             },
             mutedChannels   : []
         },
-        version: "3.0.7"
+        version: "3.0.8"
     };
     var groupsMap               = {};
     var channelLog              = {};
@@ -50,6 +50,7 @@
     var MergedChannelsGroup     = "MCG_105704_4581101_CHC";
 
     var GlobalChannel           = 1000000000;
+    var EventChannel            = 2000000000;
     var chatDirection           = "up";
 
     var scriptChannels          = [ServerMessagesChannel, CMDResposeChannel, WhispersChannel, WiresChannel];
@@ -278,6 +279,10 @@
 
         if (origChannelName == "GLOBAL"){
             channelID = GlobalChannel;
+        }
+
+        if (origChannelName == "Event"){
+            channelID = EventChannel;
         }
 
         if (channelID === 0) {
@@ -1003,8 +1008,6 @@
         });
         if (channelLog[GlobalChannel] === undefined) {
             createChannelEntry("GLOBAL", GlobalChannel, resolveChannelColor(GlobalChannel, "Global"));
-        } else {
-            console.log(channelLog[GlobalChannel]);
         }
     }
 
