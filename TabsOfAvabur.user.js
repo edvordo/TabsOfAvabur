@@ -1133,11 +1133,11 @@
                 decide = json.p.chatScroll;
             }
         }
-        if (req.url === "autoevent.php") {
-            $("title").text((json.stamina > 0 ? json.stamina+" Stamina" : "Fatigued") + " - Relics of Avabur");
-        }
         if (decide !== "") {
             chatDirection = decide;
+        }
+        if (req.url === "autoevent.php") {
+            $("title").text((json.stamina > 0 ? json.stamina+" Stamina" : "Fatigued") + " - Relics of Avabur");
         }
     }
 
