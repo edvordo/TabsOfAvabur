@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TabsOfAvabur
 // @namespace    Reltorakii.magic
-// @version      3.0.8
+// @version      3.0.9
 // @description  Tabs the channels it finds in chat, can be sorted, with notif for new messages
 // @author       Reltorakii
 // @match        https://*.avabur.com/game.php
@@ -37,7 +37,7 @@
             },
             mutedChannels   : []
         },
-        version: "3.0.8"
+        version: "3.0.9"
     };
     var groupsMap               = {};
     var channelLog              = {};
@@ -141,6 +141,8 @@
 
                     channelID       = channelInfo.cID;
                 }
+                // console.log("chinfo:");
+                // console.log(channelInfo);
                 if (channelID === CMDResposeChannel){
                     channel         = "Info Channel";
                 }
@@ -153,7 +155,8 @@
                     channel         = groupName;
                     channelColor    = randomColor();
                 }
-                if (currentChannel !== channelID){
+                 // console.log("cl",currentChannel, "cID", channelID);
+                if (currentChannel != channelID){
                     $(e).addClass("hidden");
                 } /*else {
                     $(e).show();
@@ -172,7 +175,7 @@
                         muted: options.channelsSettings.mutedChannels.indexOf(channel) !== -1
                     };*/
                 }
-                if (channelID !== currentChannel){
+                if (channelID != currentChannel){
                     channelLog[channelID].newMessages = true;
                     channelLog[channelID].newMessagesCount++;
                 }
@@ -227,7 +230,6 @@
 
     function resolveChannelID(channel)
     {
-        // console.log(channel);
         var channelID;
         var origChannelName = channel;
         var resolved = true;
@@ -280,7 +282,6 @@
         if (origChannelName == "GLOBAL"){
             channelID = GlobalChannel;
         }
-
         if (origChannelName == "Event"){
             channelID = EventChannel;
         }
@@ -1009,6 +1010,9 @@
         if (channelLog[GlobalChannel] === undefined) {
             createChannelEntry("GLOBAL", GlobalChannel, resolveChannelColor(GlobalChannel, "Global"));
         }
+        if (channelLog[EventChannel] === undefined) {
+            createChannelEntry("Event", EventChannel, resolveChannelColor(EventChannel, "Event"));
+        }
     }
 
     function createChannelEntry(channel, channelID, channelColor) {
@@ -1116,19 +1120,21 @@
         mcgn.clone().val(name).attr("data-gnid", i).appendTo(wrapper);
     }
 
-    function handleAjaxSuccess(a,b,c,json) {
+    function handleAjaxSuccess(a,res,req,json) {
         var decide = "";
         var valid = ["up", "down"];
         if (json.hasOwnProperty("cs")) {
             if (valid.indexOf(json.cs) !== -1) {
-                // console.log(json);
+                
                 decide = json.cs;
             }
         } else if (json.hasOwnProperty("p") && json.p.hasOwnProperty("chatScroll")) {
             if (valid.indexOf(json.p.chatScroll) !== -1) {
-                // console.log(json);
                 decide = json.p.chatScroll;
             }
+        }
+        if (req.url === "autoevent.php") {
+            $("title").text((json.stamina > 0 ? json.stamina+" Stamina" : "Fatigued") + " - Relics of Avabur");
         }
         if (decide !== "") {
             chatDirection = decide;
@@ -1389,6 +1395,7 @@
         $("#modalBackground").show();
         $("#ToASettingsWindow").show();
         loadAllChannels();
+        
         /**
          * load muted channel
          */
@@ -1447,19 +1454,6 @@
                     var channels = $(i.target).children("span");
                     var channelName = $(channels[0]).attr("data-channel");
                     options.channelsSettings.channelMerger.defaultChannels[groupName] = channelName;
-
-                    // channels.each(function(i,e){
-                    //     var channelName = $(e).attr("data-channel");
-                    //     console.log("dchn");
-                    //     console.log(channelName);
-                    //     delete options.channelsSettings.channelMerger.mapping[channelName];
-                    // });
-                    // channels.each(function(i,e){
-                    //     var channelName = $(e).attr("data-channel");
-                    //     console.log("achn");
-                    //     console.log(channelName);
-                    //     options.channelsSettings.channelMerger.mapping[channelName] = groupName;
-                    // });
                     saveOptions();
                 } // else branch makes no sense :)
             }
@@ -1501,13 +1495,10 @@
             !$(e.target).closest("#confirmOverlay").length &&
             !$(e.target).closest(".replenishStamina").length || 
             $(e.target).closest("#ToASettingsWindowClose").length) {
-            // console.log(e.target);
-            // console.log($(e.target).closest("#ToASettingsWindow").length);
-            // console.log($(e.target).closest("#ToASettings").length);
-            // console.log($(e.target).closest(".replenishStamina").length);
-            settings.hide();
-            $("#ToASettingsChannelMerger").hide();
-            $("#ToASettingsScriptSettings").hide();
+
+                settings.hide();
+                $("#ToASettingsChannelMerger").hide();
+                $("#ToASettingsScriptSettings").hide();
             if ($(e.target).closest("#ToASettingsWindowClose").length) {
                 $("#modalBackground").fadeOut();
             }
