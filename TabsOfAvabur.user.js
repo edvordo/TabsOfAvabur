@@ -11,7 +11,7 @@
 // ==/UserScript==
 /* jshint -W097 */
 /* jshint -W043 */
-'use strict';
+"use strict";
 
 (function($) {
 
@@ -65,149 +65,6 @@
     var hoveringOverTab;
 
     var checkForUpdateTimer     = 0;
-
-    function loadMessages(t)
-    {
-        if ($("#chatChannel option").length > 2) {
-            $("#chatMessageList li:not(.processed)").each(function(i,e){
-                var plainText       = $(e).text();
-                // lets get rid of staff stuff
-                plainText           = plainText.replace(/^\[X\]\s*/, "");
-                // now clean up spaces
-                plainText           = plainText.replace(/\s+/g, " ");
-                // default message format [11:11:11] [Channel] (optional) the rest of the message
-                var defaultMsg      = plainText.match(/^\[([^\]]+)\]\s*(\[([^\]]+)\])?\s*(.*)/);
-                // clan MoTD: [11 Nov, 1111] Clan Message of the Day:
-                var isClanMoTD      = plainText.replace(/^\[[0-9]+\s+[a-zA-Z]+\,\s*[0-9]+\]\s*/, "").indexOf("Clan Message of the Day:") === 0;
-                // clan MoTD: [11 Nov, 1111] Message of the Day:
-                var isRoAMoTD       = plainText.replace(/^\[[0-9]+\s+[a-zA-Z]+\,\s*[0-9]+\]\s*/, "").indexOf("Message of the Day:") === 0;
-                // Staff Server Messages [11:11:11] [ Whatever the hell. ]
-                var isServerMsg     = plainText.match(/^\[[^\]]+\]\s*\[\s+.*\s+]$/);
-                // whisper detection
-                var isWhisper       = plainText.match(/^\[[^\]]+\]\s*Whisper\s*(to|from)\s*([^:]+)/);
-                    isWhisper       = isWhisper && $(this).closest("li").find("span:eq(2)").text().indexOf("Whisper") === 0;
-                // wire detection
-                var isWire          = plainText.match(/^\[[^\]]+\]\s*(You|[a-zA-Z]+)\s*wired\s*.*\s*(you|[a-zA-Z]+)\.$/);
-                // [11:11:11] Username sent a whatever to you.
-
-                var isChatNotif     = $(e).children(".chat_notification").length > 0 || $(e).hasClass("chat_notification");
-                var isChatReconnect = $(e).attr("id") === "websocket_reconnect_line";
-
-                var channel = "";
-                if (currentChannel.match(/^[0-9]+$/)){
-                    channel = channelLog[currentChannel].channelName;
-                } else if (currentChannel.indexOf(MergedChannelsGroup) === 0) {
-                    channel = channelLog[currentChannel].channelName;
-                } else if (scriptChannels.indexOf(currentChannel) !== -1) {
-                    channel = channelLog[currentChannel].channelName;
-                } else {
-                    channel = currentChannel;
-                }
-                // var channel         = currentChannel=="Main" ? currentChannel : ;
-                var channelInfo     = resolveChannelID(channel);
-
-                if (defaultMsg !== null) {
-                    channel         = defaultMsg[3] === undefined ? "Main" : defaultMsg[3];
-                    if (channel !== "Main") {
-                        var validate = $(this).closest('li').find('span:eq(2)').text() === "[";
-                        var quickscopeinfo = channel.match(/^Level:\s+[0-9]+/);
-                        if (!validate && quickscopeinfo === null) {
-                            channel = "Main";
-                        }
-                    }
-                    channelInfo     = resolveChannelID(channel);
-                }
-                if (isClanMoTD) {
-                    channel         = "CLAN";
-                    channelInfo     = resolveChannelID(channel);
-                } else if (isServerMsg){
-                    channel         = "Server Messages";
-                    channelInfo     = resolveChannelID(channel);
-                } else if (isWhisper){
-                    channel         = "Whispers Log";
-                    channelInfo     = resolveChannelID(channel);
-                } else if (isWire && options.scriptSettings.group_wires){
-                    channel         = "Wires Log";
-                    channelInfo     = resolveChannelID(channel);
-                }
-                var channelID       = channelInfo.cID;
-                    channel         = channelInfo.on;
-                if (
-                    channelID !== CMDResposeChannel &&
-                    channelID !== ServerMessagesChannel &&
-                    channelID !== WiresChannel &&
-                    ( isChatNotif || isChatReconnect)
-                ) {
-
-                    channelID       = channelInfo.cID;
-                }
-                // console.log("chinfo:");
-                // console.log(channelInfo);
-                if (channelID === CMDResposeChannel){
-                    channel         = "Info Channel";
-                }
-                var channelColor    = resolveChannelColor(channelID, channelInfo.name);
-
-                if (options.channelsSettings.channelMerger.mapping[channel] !== undefined) {
-                    var groupName   = options.channelsSettings.channelMerger.mapping[channel];
-                    var groupID     = options.channelsSettings.channelMerger.groups.indexOf(groupName);
-                    channelID       = MergedChannelsGroup + "_MCGID_" + groupsMap[groupName];
-                    channel         = groupName;
-                    channelColor    = randomColor();
-                }
-                 // console.log("cl",currentChannel, "cID", channelID);
-                if (currentChannel != channelID){
-                    $(e).addClass("hidden");
-                } /*else {
-                    $(e).show();
-                }*/
-                $(e).addClass("processed");
-                $(e).addClass("chc_" + channelID);
-                if (channelLog[channelID] === undefined) {
-                    createChannelEntry(channel, channelID, channelColor);
-                    /*channelLog[channelID] = {
-                        channelName: channel,
-                        channelID: channelID,
-                        channelColor: channelColor,
-                        messages: 0,
-                        newMessages: false,
-                        newMessagesCount: 0,
-                        muted: options.channelsSettings.mutedChannels.indexOf(channel) !== -1
-                    };*/
-                }
-                if (channelID != currentChannel){
-                    channelLog[channelID].newMessages = true;
-                    channelLog[channelID].newMessagesCount++;
-                }
-                channelLog[channelID].messages++;
-                if (options.channelsSettings.mutedChannels.indexOf(channel) !== -1){
-                    $(e).remove();
-                }
-
-                if (options.scriptSettings.at_username) {
-                    $(e).html($(e).html().replace(/\@([a-zA-Z]+)/g,'@<a class="profileLink">$1</a>'));
-                }
-
-                if (options.scriptSettings.join_channel_link) {
-                    $(e).html($(e).html().replace(/\/join\s+([^\s]+)\s*([^\s<]+)?/, '/join <a class="joinChannel">$1</a> <span class="jcPWD">$2</span>'));
-                }
-
-                if (plainText.match(/tabs\s+of\s+avabur/i) !== null) {
-                    clearTimeout(checkForUpdateTimer);
-                    checkForUpdateTimer = setTimeout(checkForUpdate, randomInt(30, 120) * 1000);
-                }
-
-                updateChannelList(channelLog[channelID]);
-            });
-        }
-
-        if (t === undefined) {
-            setTimeout(loadMessages, 500);
-        }
-        if ($("#chatWrapper>div:nth-child(2)").attr("id") == "chatMessageWrapper") {
-            $("#channelTabListWrapper").insertBefore("#chatMessageListWrapper");
-        }
-    }
 
     function init()
     {
@@ -268,7 +125,7 @@
             origChannelName = map[origChannelName];
         }
 
-        var channelID = 0;
+        channelID = 0;
         $("select#chatChannel option").each(function(i,e){
             var n = $(e).attr("name");
             if (n==="channel"+channel) {
@@ -395,13 +252,13 @@
         var name = "";
         for (var i = 0; i < l; i++)
         {
-            var charset = i % 2 == 0 ? a : b;
+            var charset = i % 2 === 0 ? a : b;
             if ( i == 0 )
             {
                 charset = Math.random() < 0.5 ? a : b;
             }
             var letter = charset[randomInt(0, charset.length - 1)];
-            name += i == 0 ? letter.toUpperCase() : letter;
+            name += i === 0 ? letter.toUpperCase() : letter;
         }
         return name;
     }
@@ -821,13 +678,13 @@
         var ToAExtraDivider = $("<span>").text(" · ");
 
         ToAExtraDivider.clone().addClass("ToAPONickname").toggleClass("hidden", !options.scriptSettings.profile_tooltip_nickname).appendTo("#profileOptionTooltip");
-        $('<a>').addClass("ToAPONickname").toggleClass("hidden", !options.scriptSettings.profile_tooltip_nickname).text("Ni[c]kname").attr("id", "profileOptionNick").appendTo("#profileOptionTooltip");
+        $("<a>").addClass("ToAPONickname").toggleClass("hidden", !options.scriptSettings.profile_tooltip_nickname).text("Ni[c]kname").attr("id", "profileOptionNick").appendTo("#profileOptionTooltip");
 
         ToAExtraDivider.clone().addClass("ToAPOMention").toggleClass("hidden", !options.scriptSettings.profile_tooltip_mention).appendTo("#profileOptionTooltip");
-        $('<a>').addClass("ToAPOMention").toggleClass("hidden", !options.scriptSettings.profile_tooltip_mention).text("@m[e]ntion").attr("id", "profileOptionAt").appendTo("#profileOptionTooltip");
+        $("<a>").addClass("ToAPOMention").toggleClass("hidden", !options.scriptSettings.profile_tooltip_mention).text("@m[e]ntion").attr("id", "profileOptionAt").appendTo("#profileOptionTooltip");
 
         ToAExtraDivider.clone().addClass("ToAPOQuickscope").toggleClass("hidden", !options.scriptSettings.profile_tooltip_quickscope).appendTo("#profileOptionTooltip");
-        $('<a>').addClass("ToAPOQuickscope").toggleClass("hidden", !options.scriptSettings.profile_tooltip_quickscope).text("[Q]uickscope").attr("id", "profileOptionQuickScope").appendTo("#profileOptionTooltip");
+        $("<a>").addClass("ToAPOQuickscope").toggleClass("hidden", !options.scriptSettings.profile_tooltip_quickscope).text("[Q]uickscope").attr("id", "profileOptionQuickScope").appendTo("#profileOptionTooltip");
 
         // init
         $("#ToASettingsWindow").hide();
@@ -891,7 +748,7 @@
         confirmToo      = confirmToo===undefined?false:confirmToo;
         var channelID   = hoveringOverTab;
         var channelName = channelLog[channelID].channelName;
-        var confirmText = 'Are you sure you want purge the "'+channelName+'" channel'+(andRemove?' and remove it from tabs':'')+'?\nThis only affects your screen.';
+        var confirmText = "Are you sure you want purge the \""+channelName+"\" channel"+(andRemove?" and remove it from tabs":"")+"?\nThis only affects your screen.";
         if (confirmToo || confirm(confirmText)){
             $(".chc_"+channelID).remove();
             resetUnreadCount();
@@ -1052,7 +909,7 @@
         var username = $("#profileOptionTooltip").attr("data-username");
         $.confirm({
             "title"     : "Nickname for "+username,
-            "message"   : '<input type="text" id="ToASPONicknameName" style="width:100%;" placeholder="Leave blank to unnickname">',
+            "message"   : "<input type=\"text\" id=\"ToASPONicknameName\" style=\"width:100%;\" placeholder=\"Leave blank to unnickname\">",
             "buttons"   : {
                 "Nickname"       : {
                     "class"     : "green",
@@ -1116,7 +973,7 @@
         var wrapper = mcgw.clone().attr({"id": mcgID,"data-group": name}).appendTo("#ToASChMMergedChannelsGroupsHolder");
 
         var igb = mcgigb.clone().appendTo(wrapper);
-        mcgdb.clone().attr("data-gnid", i).html('<i class="fa fa-times"></i>').appendTo(igb);
+        mcgdb.clone().attr("data-gnid", i).html("<i class=\"fa fa-times\"></i>").appendTo(igb);
         mcgn.clone().val(name).attr("data-gnid", i).appendTo(wrapper);
     }
 
@@ -1148,7 +1005,7 @@
                 version = match[1];
 
             if (options.version < version) {
-                var message = '<li class="chat_notification">TabsOfAvabur has been updated to version '+version+'! <a href="https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js" target="_blank">Update</a> | <a href="https://github.com/edvordo/TabsOfAvabur/releases" target="_blank">Changelog</a></li>';
+                var message = "<li class=\"chat_notification\">TabsOfAvabur has been updated to version "+version+"! <a href=\"https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js\" target=\"_blank\">Update</a> | <a href=\"https://github.com/edvordo/TabsOfAvabur/releases\" target=\"_blank\">Changelog</a></li>";
                 if (chatDirection == "up") {
                     $("#chatMessageList").prepend(message);
                 } else {
@@ -1159,6 +1016,148 @@
                 checkForUpdateTimer = setTimeout(checkForUpdate, 24*60*60*1000);
             }
         });
+    }
+
+    function loadMessages(t) {
+        if ($("#chatChannel option").length > 2) {
+            $("#chatMessageList li:not(.processed)").each(function(i,e){
+                var plainText       = $(e).text();
+                // lets get rid of staff stuff
+                plainText           = plainText.replace(/^\[X\]\s*/, "");
+                // now clean up spaces
+                plainText           = plainText.replace(/\s+/g, " ");
+                // default message format [11:11:11] [Channel] (optional) the rest of the message
+                var defaultMsg      = plainText.match(/^\[([^\]]+)\]\s*(\[([^\]]+)\])?\s*(.*)/);
+                // clan MoTD: [11 Nov, 1111] Clan Message of the Day:
+                var isClanMoTD      = plainText.replace(/^\[[0-9]+\s+[a-zA-Z]+\,\s*[0-9]+\]\s*/, "").indexOf("Clan Message of the Day:") === 0;
+                // clan MoTD: [11 Nov, 1111] Message of the Day:
+                var isRoAMoTD       = plainText.replace(/^\[[0-9]+\s+[a-zA-Z]+\,\s*[0-9]+\]\s*/, "").indexOf("Message of the Day:") === 0;
+                // Staff Server Messages [11:11:11] [ Whatever the hell. ]
+                var isServerMsg     = plainText.match(/^\[[^\]]+\]\s*\[\s+.*\s+]$/);
+                // whisper detection
+                var isWhisper       = plainText.match(/^\[[^\]]+\]\s*Whisper\s*(to|from)\s*([^:]+)/);
+                    isWhisper       = isWhisper && $(this).closest("li").find("span:eq(2)").text().indexOf("Whisper") === 0;
+                // wire detection
+                var isWire          = plainText.match(/^\[[^\]]+\]\s*(You|[a-zA-Z]+)\s*wired\s*.*\s*(you|[a-zA-Z]+)\.$/);
+                // [11:11:11] Username sent a whatever to you.
+
+                var isChatNotif     = $(e).children(".chat_notification").length > 0 || $(e).hasClass("chat_notification");
+                var isChatReconnect = $(e).attr("id") === "websocket_reconnect_line";
+
+                var channel = "";
+                if (currentChannel.match(/^[0-9]+$/)){
+                    channel = channelLog[currentChannel].channelName;
+                } else if (currentChannel.indexOf(MergedChannelsGroup) === 0) {
+                    channel = channelLog[currentChannel].channelName;
+                } else if (scriptChannels.indexOf(currentChannel) !== -1) {
+                    channel = channelLog[currentChannel].channelName;
+                } else {
+                    channel = currentChannel;
+                }
+                // var channel         = currentChannel=="Main" ? currentChannel : ;
+                var channelInfo     = resolveChannelID(channel);
+
+                if (defaultMsg !== null) {
+                    channel         = typeof defaultMsg[3] === "undefined" ? "Main" : defaultMsg[3];
+                    if (channel !== "Main") {
+                        var validate = $(this).closest("li").find("span:eq(2)").text() === "[";
+                        var quickscopeinfo = channel.match(/^Level:\s+[0-9]+/);
+                        if (!validate && quickscopeinfo === null) {
+                            channel = "Main";
+                        }
+                    }
+                    channelInfo     = resolveChannelID(channel);
+                }
+                if (isClanMoTD) {
+                    channel         = "CLAN";
+                    channelInfo     = resolveChannelID(channel);
+                } else if (isServerMsg){
+                    channel         = "Server Messages";
+                    channelInfo     = resolveChannelID(channel);
+                } else if (isWhisper){
+                    channel         = "Whispers Log";
+                    channelInfo     = resolveChannelID(channel);
+                } else if (isWire && options.scriptSettings.group_wires){
+                    channel         = "Wires Log";
+                    channelInfo     = resolveChannelID(channel);
+                }
+                var channelID       = channelInfo.cID;
+                    channel         = channelInfo.on;
+                if (
+                    channelID !== CMDResposeChannel &&
+                    channelID !== ServerMessagesChannel &&
+                    channelID !== WiresChannel &&
+                    ( isChatNotif || isChatReconnect)
+                ) {
+
+                    channelID       = channelInfo.cID;
+                }
+                // console.log("chinfo:");
+                // console.log(channelInfo);
+                if (channelID === CMDResposeChannel){
+                    channel         = "Info Channel";
+                }
+                var channelColor    = resolveChannelColor(channelID, channelInfo.name);
+
+                if (options.channelsSettings.channelMerger.mapping[channel] !== undefined) {
+                    var groupName   = options.channelsSettings.channelMerger.mapping[channel];
+                    var groupID     = options.channelsSettings.channelMerger.groups.indexOf(groupName);
+                    channelID       = MergedChannelsGroup + "_MCGID_" + groupsMap[groupName];
+                    channel         = groupName;
+                    channelColor    = randomColor();
+                }
+                 // console.log("cl",currentChannel, "cID", channelID);
+                if (currentChannel != channelID){
+                    $(e).addClass("hidden");
+                } /*else {
+                    $(e).show();
+                }*/
+                $(e).addClass("processed");
+                $(e).addClass("chc_" + channelID);
+                if (channelLog[channelID] === undefined) {
+                    createChannelEntry(channel, channelID, channelColor);
+                    /*channelLog[channelID] = {
+                        channelName: channel,
+                        channelID: channelID,
+                        channelColor: channelColor,
+                        messages: 0,
+                        newMessages: false,
+                        newMessagesCount: 0,
+                        muted: options.channelsSettings.mutedChannels.indexOf(channel) !== -1
+                    };*/
+                }
+                if (channelID != currentChannel){
+                    channelLog[channelID].newMessages = true;
+                    channelLog[channelID].newMessagesCount++;
+                }
+                channelLog[channelID].messages++;
+                if (options.channelsSettings.mutedChannels.indexOf(channel) !== -1){
+                    $(e).remove();
+                }
+
+                if (options.scriptSettings.at_username) {
+                    $(e).html($(e).html().replace(/\@([a-zA-Z]+)/g,'@<a class="profileLink">$1</a>'));
+                }
+
+                if (options.scriptSettings.join_channel_link) {
+                    $(e).html($(e).html().replace(/\/join\s+([^\s]+)\s*([^\s<]+)?/, '/join <a class="joinChannel">$1</a> <span class="jcPWD">$2</span>'));
+                }
+
+                if (plainText.match(/tabs\s+of\s+avabur/i) !== null) {
+                    clearTimeout(checkForUpdateTimer);
+                    checkForUpdateTimer = setTimeout(checkForUpdate, randomInt(30, 120) * 1000);
+                }
+
+                updateChannelList(channelLog[channelID]);
+            });
+        }
+
+        if (t === undefined) {
+            setTimeout(loadMessages, 500);
+        }
+        if ($("#chatWrapper>div:nth-child(2)").attr("id") == "chatMessageWrapper") {
+            $("#channelTabListWrapper").insertBefore("#chatMessageListWrapper");
+        }
     }
 
     $(document).on("ajaxSuccess", handleAjaxSuccess);
@@ -1225,7 +1224,7 @@
             channelLog[hoveringOverTab].channelColor = color;
             updateChannelList(channelLog[hoveringOverTab]);
         } else {
-            $.alert('Tab color change failed! Please try again!', 'Group tab color change');
+            $.alert("Tab color change failed! Please try again!", "Group tab color change");
         }
     });
 
@@ -1477,7 +1476,7 @@
 
     $(document).on("click", ".joinChannel", function(){
         // trim(",");
-        var chn = $(this).text().replace(/^,+|,+$/gm,'');
+        var chn = $(this).text().replace(/^,+|,+$/gm,"");
         $("#chatMessage").text("/join "+ chn);
         var pwd = $(this).parent().find(".jcPWD").text();
         $("#chatMessage").append(" " + pwd);
@@ -1548,7 +1547,7 @@
     $(document).on("click", "#ToASChMAddGroup", function(){
         $.confirm({
             "title"     : "New Group Name",
-            "message"   : '<input type="text" id="ToASChMNewgroupName" style="width:100%;">',
+            ""message"   : "<input type=\"text\" id=\"ToASChMNewgroupName\" style=\"width:100%;\">",
             "buttons"   : {
                 "Create"       : {
                     "class"     : "green",
