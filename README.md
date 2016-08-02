@@ -77,3 +77,5 @@ In case you had previous versions of ToA (prior to the 3.0 version) installed, t
    * All of these can be disabled in ToA options
  * You'll get a notification in chat when I update ToA :smiley:
  * Can be updated ia script managers!
+
+ [![Codacy Badge](https://api.codacy.com/project/badge/Grade/23ec4cd723ec44a590b02f6b4d3099e3)](https://www.codacy.com/app/edo_2/TabsOfAvabur?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=edvordo/TabsOfAvabur&amp;utm_campaign=Badge_Grade)
