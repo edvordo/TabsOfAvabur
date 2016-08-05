@@ -253,7 +253,7 @@
         for (var i = 0; i < l; i++)
         {
             var charset = i % 2 === 0 ? a : b;
-            if ( i == 0 )
+            if ( i === 0 )
             {
                 charset = Math.random() < 0.5 ? a : b;
             }
@@ -692,7 +692,7 @@
         $("#ToASettingsChannelMerger").hide();
         $("#ToASettingsSaved").hide();
         $(".ToATooltip").tooltip();
-        $("#ToASettingsWindow").draggable({handle:"h5"})
+        $("#ToASettingsWindow").draggable({handle:"h5"});
         /**
          * CSS
          */
@@ -749,7 +749,7 @@
         var channelID   = hoveringOverTab;
         var channelName = channelLog[channelID].channelName;
         var confirmText = "Are you sure you want purge the \""+channelName+"\" channel"+(andRemove?" and remove it from tabs":"")+"?\nThis only affects your screen.";
-        if (confirmToo || confirm(confirmText)){
+        if (confirmToo || window.confirm(confirmText)){
             $(".chc_"+channelID).remove();
             resetUnreadCount();
             if (andRemove) {
@@ -789,60 +789,60 @@
         var stored = localStorage.getItem("ToAOPTS");
         try {
             var parsed = JSON.parse(stored);
-            if (!parsed["scriptSettings"] !== undefined){
-                if (parsed["scriptSettings"]["purge"] !== undefined) {
-                    options.scriptSettings.purge = !!parsed["scriptSettings"]["purge"];
+            if (parsed.scriptSettings !== undefined){
+                if (parsed.scriptSettings.purge !== undefined) {
+                    options.scriptSettings.purge = !!parsed.scriptSettings.purge;
                 }
-                if (parsed["scriptSettings"]["channel_remove"] !== undefined) {
-                    options.scriptSettings.channel_remove = !!parsed["scriptSettings"]["channel_remove"];
+                if (parsed.scriptSettings.channel_remove !== undefined) {
+                    options.scriptSettings.channel_remove = !!parsed.scriptSettings.channel_remove;
                 }
-                if (parsed["scriptSettings"]["preview"] !== undefined) {
-                    options.scriptSettings.preview = !!parsed["scriptSettings"]["preview"];
+                if (parsed.scriptSettings.preview !== undefined) {
+                    options.scriptSettings.preview = !!parsed.scriptSettings.preview;
                 }
-                if (parsed["scriptSettings"]["preview_reset"] !== undefined) {
-                    options.scriptSettings.preview_reset = !!parsed["scriptSettings"]["preview_reset"];
+                if (parsed.scriptSettings.preview_reset !== undefined) {
+                    options.scriptSettings.preview_reset = !!parsed.scriptSettings.preview_reset;
                 }
-                if (parsed["scriptSettings"]["group_wires"] !== undefined) {
-                    options.scriptSettings.group_wires = !!parsed["scriptSettings"]["group_wires"];
+                if (parsed.scriptSettings.group_wires !== undefined) {
+                    options.scriptSettings.group_wires = !!parsed.scriptSettings.group_wires;
                 }
-                if (parsed["scriptSettings"]["at_username"] !== undefined) {
-                    options.scriptSettings.at_username = !!parsed["scriptSettings"]["at_username"];
+                if (parsed.scriptSettings.at_username !== undefined) {
+                    options.scriptSettings.at_username = !!parsed.scriptSettings.at_username;
                 }
-                if (parsed["scriptSettings"]["join_channel_link"] !== undefined) {
-                    options.scriptSettings.join_channel_link = !!parsed["scriptSettings"]["join_channel_link"];
+                if (parsed.scriptSettings.join_channel_link !== undefined) {
+                    options.scriptSettings.join_channel_link = !!parsed.scriptSettings.join_channel_link;
                 }
-                if (parsed["scriptSettings"]["auto_join"] !== undefined) {
-                    options.scriptSettings.auto_join = !!parsed["scriptSettings"]["auto_join"];
+                if (parsed.scriptSettings.auto_join !== undefined) {
+                    options.scriptSettings.auto_join = !!parsed.scriptSettings.auto_join;
                 }
-                if (parsed["scriptSettings"]["profile_tooltip_nickname"] !== undefined) {
-                    options.scriptSettings.profile_tooltip_nickname = !!parsed["scriptSettings"]["profile_tooltip_nickname"];
+                if (parsed.scriptSettings.profile_tooltip_nickname !== undefined) {
+                    options.scriptSettings.profile_tooltip_nickname = !!parsed.scriptSettings.profile_tooltip_nickname;
                 }
-                if (parsed["scriptSettings"]["profile_tooltip_mention"] !== undefined) {
-                    options.scriptSettings.profile_tooltip_mention = !!parsed["scriptSettings"]["profile_tooltip_mention"];
+                if (parsed.scriptSettings.profile_tooltip_mention !== undefined) {
+                    options.scriptSettings.profile_tooltip_mention = !!parsed.scriptSettings.profile_tooltip_mention;
                 }
-                if (parsed["scriptSettings"]["profile_tooltip_quickscope"] !== undefined) {
-                    options.scriptSettings.profile_tooltip_quickscope = !!parsed["scriptSettings"]["profile_tooltip_quickscope"];
+                if (parsed.scriptSettings.profile_tooltip_quickscope !== undefined) {
+                    options.scriptSettings.profile_tooltip_quickscope = !!parsed.scriptSettings.profile_tooltip_quickscope;
                 }
             }
-            if (parsed["channelsSettings"] !== undefined && parsed["version"] !== undefined) {
-                if (parsed["channelsSettings"]["mutedChannels"] !== undefined && Array.isArray(parsed["channelsSettings"]["mutedChannels"])) {
-                    options.channelsSettings.mutedChannels = parsed["channelsSettings"]["mutedChannels"];
+            if (parsed.channelsSettings !== undefined && parsed.version !== undefined) {
+                if (parsed.channelsSettings.mutedChannels !== undefined && Array.isArray(parsed.channelsSettings.mutedChannels)) {
+                    options.channelsSettings.mutedChannels = parsed.channelsSettings.mutedChannels;
                 }
-                if (parsed["channelsSettings"]["channelMerger"] !== undefined) {
-                    if (parsed["channelsSettings"]["channelMerger"]["groups"] !== undefined && Array.isArray(parsed["channelsSettings"]["channelMerger"]["groups"])) {
-                        for (var ccg in parsed["channelsSettings"]["channelMerger"]["groups"]) {
-                            var groupName = parsed["channelsSettings"]["channelMerger"]["groups"][ccg];
+                if (parsed.channelsSettings.channelMerger !== undefined) {
+                    if (parsed.channelsSettings.channelMerger.groups !== undefined && Array.isArray(parsed.channelsSettings.channelMerger.groups)) {
+                        for (var ccg in parsed.channelsSettings.channelMerger.groups) {
+                            var groupName = parsed.channelsSettings.channelMerger.groups[ccg];
                             if (typeof groupName === "string" && options.channelsSettings.channelMerger.groups.indexOf(groupName) === -1) {
                                 options.channelsSettings.channelMerger.groups.push(groupName);
                                 groupsMap[groupName] = randomName(3,5) + "_" + randomInt(5,9);
                             }
                         }
                     }
-                    if (parsed["channelsSettings"]["channelMerger"]["mapping"] !== undefined && typeof parsed["channelsSettings"]["channelMerger"]["mapping"] === "object") {
-                        options.channelsSettings.channelMerger.mapping = parsed["channelsSettings"]["channelMerger"]["mapping"];
+                    if (parsed.channelsSettings.channelMerger.mapping !== undefined && typeof parsed.channelsSettings.channelMerger.mapping === "object") {
+                        options.channelsSettings.channelMerger.mapping = parsed.channelsSettings.channelMerger.mapping;
                     }
-                    if (parsed["channelsSettings"]["channelMerger"]["defaultChannels"] !== undefined && typeof parsed["channelsSettings"]["channelMerger"]["defaultChannels"] === "object") {
-                        options.channelsSettings.channelMerger.defaultChannels = parsed["channelsSettings"]["channelMerger"]["defaultChannels"];
+                    if (parsed.channelsSettings.channelMerger.defaultChannels !== undefined && typeof parsed.channelsSettings.channelMerger.defaultChannels === "object") {
+                        options.channelsSettings.channelMerger.defaultChannels = parsed.channelsSettings.channelMerger.defaultChannels;
                     }
                 }
             }
@@ -1412,14 +1412,15 @@
         }
 
         $("#ToASChMMergedChannelsGroupsHolder").html("");
-        for (var i in options.channelsSettings.channelMerger.groups){
-            var mcggn = options.channelsSettings.channelMerger.groups[i];
-            addChannelGroup(i, mcggn);
+        for (var j in options.channelsSettings.channelMerger.groups){
+            var mcggn = options.channelsSettings.channelMerger.groups[j];
+            addChannelGroup(j, mcggn);
         }
+        var channelName = "";
         for (var channelID in channelLog) {
             if (!channelID.match(/^[0-9]+$/)) continue;
             var channelInfo     = channelLog[channelID];
-            var channelName     = channelInfo.channelName;
+                channelName     = channelInfo.channelName;
             var channelBlob     = mchw.clone().attr("data-channel", channelName).text(channelName);
             if (options.channelsSettings.channelMerger.mapping[channelName] !== undefined) {
                 var grouppedInto    = options.channelsSettings.channelMerger.mapping[channelName];
@@ -1434,11 +1435,12 @@
                 channelBlob.appendTo("#ToASChMMergedChannelsHolder");
             }
         }
+        channelName = "";
         $(".incsort").sortable({
             items: "span",
             connectWith: ".incsort",
             receive: function(i,e) {
-                var channelName = $(e.item[0]).attr("data-channel");
+                    channelName = $(e.item[0]).attr("data-channel");
                 var groupName   = $(this).attr("data-group");
                 if (groupName === undefined) {
                     delete options.channelsSettings.channelMerger.mapping[channelName];
@@ -1547,7 +1549,7 @@
     $(document).on("click", "#ToASChMAddGroup", function(){
         $.confirm({
             "title"     : "New Group Name",
-            ""message"   : "<input type=\"text\" id=\"ToASChMNewgroupName\" style=\"width:100%;\">",
+            "message"   : "<input type=\"text\" id=\"ToASChMNewgroupName\" style=\"width:100%;\">",
             "buttons"   : {
                 "Create"       : {
                     "class"     : "green",
