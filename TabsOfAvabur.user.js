@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TabsOfAvabur
 // @namespace    Reltorakii.magic
-// @version      3.0.9
+// @version      3.0.10
 // @description  Tabs the channels it finds in chat, can be sorted, with notif for new messages
 // @author       Reltorakii
 // @match        https://*.avabur.com/game.php
@@ -37,7 +37,7 @@
             },
             mutedChannels   : []
         },
-        version: "3.0.9"
+        version: "3.0.10"
     };
     var groupsMap               = {};
     var channelLog              = {};
@@ -66,33 +66,17 @@
 
     var checkForUpdateTimer     = 0;
 
-    function init()
-    {
-        loadOptions();
-        loadDependencies();
-        prepareHTML();
-        addSettingsTab();
-        loadMessages();
-
-        $("#channelTabListWrapper").mCustomScrollbar({axis:"x",advanced:{autoExpandHorizontalScroll:true}});
-        $("#channelTabList").sortable({items:".channelTab",distance: 5});
-        $("#channelTabList").disableSelection();
-        setTimeout(function(){$("#channelTabList > div:nth-child(2)").click();},2000);
-        checkForUpdateTimer = setTimeout(checkForUpdate,30000);
-    }
-
-    function returnCustomID(channel, resolved, name, on) {
+    function returnCustomID(channel, resolved, cname, on) {
         var obj =  {
             cID: channel, 
             res: resolved, 
-            name: name, 
+            name: cname, 
             on: typeof on !== "undefined" ? on : name
         };
         return obj;
     }
 
-    function resolveChannelID(channel)
-    {
+    function resolveChannelID(channel) {
         var channelID;
         var origChannelName = channel;
         var resolved = true;
@@ -157,8 +141,7 @@
         return returnCustomID(channelID, resolved, channel, origChannelName);
     }
 
-    function resolveChannelColor(channelID, channelName)
-    {
+    function resolveChannelColor(channelID, channelName) {
         var color = "";
         try {
             color = $(".chatChannel[data-id=\"" + channelName + "\"]").css("background-color");
@@ -184,8 +167,7 @@
         return color;
     }
 
-    function updateChannelList(channel)
-    {
+    function updateChannelList(channel) {
         var tab = $("#channelTab" + channel.channelID);
         if (tab.length === 0) {
             if (channel.muted) {
@@ -223,8 +205,7 @@
         }
     }
 
-    function addSettingsTab()
-    {
+    function addSettingsTab() {
         $("<div>")
             .attr("id", "ToASettings")
             .addClass("border2 ui-element ToASettings")
@@ -239,8 +220,7 @@
             .appendTo("#ToASettings");
     }
 
-    function randomInt(min, max)
-    {
+    function randomInt(min, max) {
         return Math.round( Math.random() * ( max - min ) ) + min;
     }
 
@@ -252,8 +232,7 @@
         return color;
     }
 
-    function randomName(min, max)
-    {
+    function randomName(min, max) {
         var a = "aeiou".split("");
         var b = "rtzpsdfghklmnbvc".split("");
         var l = randomInt(min, max);
@@ -278,8 +257,7 @@
         return first + str.substr(1);
     }
 
-    function loadDependencies()
-    {
+    function loadDependencies() {
         //<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
         $("<link>")
             .attr({
@@ -289,8 +267,7 @@
             .appendTo("head");
     }
 
-    function prepareHTML()
-    {
+    function prepareHTML() {
         $("<div>")
             .attr("id", "channelTabListWrapper")
             .insertBefore("#chatMessageListWrapper");
@@ -385,6 +362,16 @@
             .prependTo("#chTabCTMenuReset");
 
         $("<a>")
+            .attr("id", "chTabCTMenuLast")
+            .text("Show history")
+            .addClass("cctmButton")
+            .appendTo("#channelTabContextMenu");
+
+        $("<span>")
+            .addClass("ui-element fa fa-history materials")
+            .prependTo("#chTabCTMenuLast");
+
+        $("<a>")
             .attr("id", "chTabCTMenuPurge")
             .text("Purge messages")
             .addClass("cctmButton")
@@ -423,6 +410,7 @@
         $("<span>")
             .addClass("ui-element fa fa-crosshairs crystals")
             .prependTo("#chTabCTMenuColor");
+
 
         $("#channelTabContextMenu").hide();
 
@@ -739,8 +727,18 @@
         .appendTo("body");
     }
 
-    function changeSetting(e)
-    {
+    var SSN = 0;
+    function saveOptions() {
+        clearTimeout(SSN);
+        var opts = JSON.stringify(options);
+        localStorage.setItem("ToAOPTS", opts);
+        $("#ToASettingsSaved").show();
+        SSN = setTimeout(function(){
+            $("#ToASettingsSaved").fadeOut();
+        }, 3E3);
+    }
+
+    function changeSetting(e) {
         var setting = $(e).attr("data-setting");
         options.scriptSettings[setting] = $(e).prop("checked");
         var match = setting.match("^profile_tooltip_([a-z]+)");
@@ -751,8 +749,16 @@
         saveOptions();
     }
 
-    function purgeChannel(andRemove,confirmToo)
-    {
+    function resetUnreadCount() {
+        var channelID                           = hoveringOverTab;
+        channelLog[channelID].newMessages       = false;
+        channelLog[channelID].newMessagesCount  = 0;
+        updateChannelList(channelLog[channelID]);
+        $("#channelPreviewWrapper").hide();
+        $("#channelTabContextMenu").hide();
+    }
+
+    function purgeChannel(andRemove,confirmToo) {
         andRemove       = typeof andRemove==="undefined"?options.scriptSettings.channel_remove:andRemove;
         confirmToo      = typeof confirmToo==="undefined"?false:confirmToo;
         var channelID   = hoveringOverTab;
@@ -771,30 +777,7 @@
         }
     }
 
-    function resetUnreadCount()
-    {
-        var channelID                           = hoveringOverTab;
-        channelLog[channelID].newMessages       = false;
-        channelLog[channelID].newMessagesCount  = 0;
-        updateChannelList(channelLog[channelID]);
-        $("#channelPreviewWrapper").hide();
-        $("#channelTabContextMenu").hide();
-    }
-
-    var SSN = 0;
-    function saveOptions()
-    {
-        clearTimeout(SSN);
-        var opts = JSON.stringify(options);
-        localStorage.setItem("ToAOPTS", opts);
-        $("#ToASettingsSaved").show();
-        SSN = setTimeout(function(){
-            $("#ToASettingsSaved").fadeOut();
-        }, 3E3);
-    }
-
-    function loadOptions()
-    {
+    function loadOptions(){
         var stored = localStorage.getItem("ToAOPTS");
         try {
             var parsed = JSON.parse(stored);
@@ -859,7 +842,7 @@
             saveOptions();
         } catch(e) {
             localStorage.removeItem("ToAOPTS");
-            console.log(e);
+            // console.log(e);
         }
     }
 
@@ -1001,9 +984,6 @@
         }
         if (decide !== "") {
             chatDirection = decide;
-        }
-        if (req.url === "autoevent.php") {
-            $("title").text((json.stamina > 0 ? json.stamina+" Stamina" : "Fatigued") + " - Relics of Avabur");
         }
     }
 
@@ -1169,6 +1149,20 @@
         }
     }
 
+    function init() {
+        loadOptions();
+        loadDependencies();
+        prepareHTML();
+        addSettingsTab();
+        loadMessages();
+
+        $("#channelTabListWrapper").mCustomScrollbar({axis:"x",advanced:{autoExpandHorizontalScroll:true}});
+        $("#channelTabList").sortable({items:".channelTab",distance: 5});
+        $("#channelTabList").disableSelection();
+        setTimeout(function(){$("#channelTabList > div:nth-child(2)").click();},2000);
+        checkForUpdateTimer = setTimeout(checkForUpdate,30000);
+    }
+
     $(document).on("ajaxSuccess", handleAjaxSuccess);
 
     $(document).on("change", ".settingsChanger", function(e){
@@ -1208,6 +1202,20 @@
 
     $(document).on("click", "#CPAReset, #chTabCTMenuReset", function(){
         resetUnreadCount();
+    });
+
+    $(document).on("click", "#CPAReset, #chTabCTMenuLast", function(){
+        var channelName = channelLog[hoveringOverTab].channelName;
+        var msg = "/last "+channelName;
+        if (channelName === "CLAN") {
+            msg = "/c /last";
+        } else if (options.channelsSettings.channelMerger.groups.indexOf(channelName) !== -1) {
+            if (typeof options.channelsSettings.channelMerger.defaultChannels[channelName] !== "undefined") {
+                msg = "/last " + options.channelsSettings.channelMerger.defaultChannels[channelName];
+            }
+        }
+        $("#chatMessage").text(msg);
+        $("#chatSendMessage").click();
     });
 
     $(document).on("click", "#CPAPurge, #chTabCTMenuPurge", function(){
