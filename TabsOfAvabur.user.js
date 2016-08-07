@@ -1213,6 +1213,10 @@
             if (typeof options.channelsSettings.channelMerger.defaultChannels[channelName] !== "undefined") {
                 msg = "/last " + options.channelsSettings.channelMerger.defaultChannels[channelName];
             }
+        } else if (channelName === "Whispers Log") {
+            msg = "/w /last";
+        } else if (scriptChannels.indexOf(hoveringOverTab) !== -1) {
+            return false;
         }
         $("#chatMessage").text(msg);
         $("#chatSendMessage").click();
@@ -1399,6 +1403,12 @@
         } else {
             $("#chTabCTMenuColor").hide();
             $("#chTabCTMenuLeave").show();
+        }
+
+        if (scriptChannels.indexOf(hoveringOverTab) !== -1 && hoveringOverTab !== WhispersChannel) {
+            $("#chTabCTMenuLast").hide();
+        } else {
+            $("#chTabCTMenuLast").show();
         }
         // $("#chTabCTMenuColor").hide();
 
