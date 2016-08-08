@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TabsOfAvabur
 // @namespace    Reltorakii.magic
-// @version      3.0.10
+// @version      3.1
 // @description  Tabs the channels it finds in chat, can be sorted, with notif for new messages
 // @author       Reltorakii
 // @match        https://*.avabur.com/game.php
@@ -37,7 +37,7 @@
             },
             mutedChannels   : []
         },
-        version: "3.0.10"
+        version: "3.1"
     };
     var groupsMap               = {};
     var channelLog              = {};
@@ -846,6 +846,18 @@
         }
     }
 
+    function createChannelEntry(newChannel, newChannelID, newChannelColor) {
+        channelLog[newChannelID] = {
+            channelName: newChannel,
+            channelID: newChannelID,
+            channelColor: newChannelColor,
+            messages: 0,
+            newMessages: false,
+            newMessagesCount: 0,
+            muted: options.channelsSettings.mutedChannels.indexOf(newChannel) !== -1
+        };
+    }
+
     function loadAllChannels() {
         $("#chatChannel option").each(function(i,e){
             var channelName     = $(e).text();
@@ -862,18 +874,6 @@
         if (typeof channelLog[EventChannel] === "undefined") {
             createChannelEntry("Event", EventChannel, resolveChannelColor(EventChannel, "Event"));
         }
-    }
-
-    function createChannelEntry(channel, channelID, channelColor) {
-        channelLog[channelID] = {
-            channelName: channel,
-            channelID: channelID,
-            channelColor: channelColor,
-            messages: 0,
-            newMessages: false,
-            newMessagesCount: 0,
-            muted: options.channelsSettings.mutedChannels.indexOf(channel) !== -1
-        };
     }
 
     function quickScopeUser(){
@@ -987,15 +987,32 @@
         }
     }
 
+    function versionCompare(v1, v2) {
+        var regex   = new RegExp("(\.0+)+");
+            v1      = v1.replace(regex, "").split(".");
+            v2      = v2.replace(regex, "").split(".");
+        var min     = Math.min(v1.length, v2.length);
+
+        var diff = 0;
+        for (var i = 0; i < min; i++) {
+            diff = parseInt(v1[i], 10) - parseInt(v2[i], 10);
+            if (diff !== 0) {
+                return diff;
+            }
+        }
+
+        return v1.length - v2.length;
+    }
+
     function checkForUpdate() {
         var version = "";
         $.get(internalUpdateUrl).done(function(res){
             var match = atob(res.content).match(/\/\/\s+@version\s+([^\n]+)/);
                 version = match[1];
 
-            if (options.version < version) {
+            if (versionCompare(options.version, version) < 0) {
                 var message = "<li class=\"chat_notification\">TabsOfAvabur has been updated to version "+version+"! <a href=\"https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js\" target=\"_blank\">Update</a> | <a href=\"https://github.com/edvordo/TabsOfAvabur/releases\" target=\"_blank\">Changelog</a></li>";
-                if (chatDirection == "up") {
+                if (chatDirection === "up") {
                     $("#chatMessageList").prepend(message);
                 } else {
                     $("#chatMessageList").append(message);
@@ -1144,7 +1161,7 @@
         if (typeof t === "undefined") {
             setTimeout(loadMessages, 500);
         }
-        if ($("#chatWrapper>div:nth-child(2)").attr("id") == "chatMessageWrapper") {
+        if ($("#chatWrapper>div:nth-child(2)").attr("id") === "chatMessageWrapper") {
             $("#channelTabListWrapper").insertBefore("#chatMessageListWrapper");
         }
     }
@@ -1446,7 +1463,9 @@
             addChannelGroup(j, mcggn);
         }
         for (var channelID in channelLog) {
-            if (!channelID.match(/^[0-9]+$/)) continue;
+            if (!channelID.match(/^[0-9]+$/)) {
+                continue;
+            }
             var channelInfo     = channelLog[channelID];
                 channelName     = channelInfo.channelName;
             var channelBlob     = mchw.clone().attr("data-channel", channelName).text(channelName);
