@@ -37,7 +37,7 @@
             },
             mutedChannels   : []
         },
-        version: "3.1"
+        version: "4.0.1"
     };
     var groupsMap               = {};
     var channelLog              = {};
