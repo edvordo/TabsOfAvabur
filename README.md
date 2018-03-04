@@ -14,10 +14,15 @@ Sorts messages in chat under channel tabs and adds several new features built ar
  * [Features](#features)
 
 ## Preview
-![Tabs of avabur ingame](http://i.imgur.com/renrcv1.png "This is what ToA will look like in your game")
+![Tabs of avabur ingame](https://i.imgur.com/renrcv1.png "This is what ToA will look like in your game")
 
 
 ## Notes
+
+### v4.0 beta version
+
+Known issue is that the chat direction is not being respected. I'll address this at some point, for now you'll have to deal with it.
+
 ### Fair warning
 While I have **no intention of harming you** with my work, this is a ***custom JavaScript code*** and you ***should not trust and install just any script you find on the internet***. Get someone that knows a bit of programming to check it for you if you are unsure!
 
