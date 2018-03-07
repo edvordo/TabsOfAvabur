@@ -19,9 +19,17 @@ Sorts messages in chat under channel tabs and adds several new features built ar
 
 ## Notes
 
-### v4.0 beta version
+### Chat direction
 
-Known issue is that the chat direction is not being respected. I'll address this at some point, for now you'll have to deal with it.
+To have your chat direction respected nad used by ToA, you have two options:
+* Install [edvordo/RoA-WSHookUp](https://github.com/edvordo/RoA-WSHookUp) userscript
+  * tl;dr: this script does nothing visible, it's meant for developers to give **you** something to see :)
+  * With this option you don't have to do anything else, your chat direction will be applied upon next refresh
+  * I'm sure there will be an use for it some point anyway, the updated avabur enhacer uses it afaik
+* After installing version 4.1 or later and refreshing the gamepage, go to `Account Management -> Preferences -> Chat` and change the setting back and forth
+  * You'll only need to do this once, the setting will persist between reloads after that
+  * You don't even have to save the change in chat dir., just clicking the options (New Messages on Top -> New Messages on Bottom) will make ToA use it
+
 
 ### Fair warning
 While I have **no intention of harming you** with my work, this is a ***custom JavaScript code*** and you ***should not trust and install just any script you find on the internet***. Get someone that knows a bit of programming to check it for you if you are unsure!

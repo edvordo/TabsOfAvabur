@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TabsOfAvabur
 // @namespace    Reltorakii.magic
-// @version      4.0
+// @version      4.1
 // @description  Tabs the channels it finds in chat, can be sorted, with notif for new messages
 // @author       Reltorakii
 // @match        https://*.avabur.com/game*
@@ -27,7 +27,8 @@
             auto_join                   : false,
             profile_tooltip_nickname    : true,
             profile_tooltip_mention     : true,
-            profile_tooltip_quickscope  : true
+            profile_tooltip_quickscope  : true,
+            chat_direction              : 'up'
         },
         channelsSettings    : {
             channelMerger       : {
@@ -37,7 +38,7 @@
             },
             mutedChannels   : []
         },
-        version: "4.0.1"
+        version: "4.1"
     };
     var groupsMap               = {};
     var channelLog              = {};
@@ -51,7 +52,6 @@
 
     var GlobalChannel           = 1000000000;
     var EventChannel            = 2000000000;
-    var chatDirection           = "up";
 
     var scriptChannels          = [ServerMessagesChannel, CMDResposeChannel, WhispersChannel, WiresChannel];
 
@@ -814,6 +814,9 @@
                 if (typeof parsed.scriptSettings.profile_tooltip_quickscope !== "undefined") {
                     options.scriptSettings.profile_tooltip_quickscope = !!parsed.scriptSettings.profile_tooltip_quickscope;
                 }
+                if (typeof parsed.scriptSettings.chat_direction !== "undefined") {
+                    options.scriptSettings.chat_direction = parsed.scriptSettings.chat_direction;
+                }
             }
             if (typeof parsed.channelsSettings !== "undefined" && typeof parsed.version !== "undefined") {
                 if (typeof parsed.channelsSettings.mutedChannels !== "undefined" && Array.isArray(parsed.channelsSettings.mutedChannels)) {
@@ -981,24 +984,6 @@
         mcgn.clone().val(name).attr("data-gnid", i).appendTo(wrapper);
     }
 
-    function handleAjaxSuccess(a,res,req,json) {
-        var decide = "";
-        var valid = ["up", "down"];
-        if (json.hasOwnProperty("cs")) {
-            if (valid.indexOf(json.cs) !== -1) {
-
-                decide = json.cs;
-            }
-        } else if (json.hasOwnProperty("p") && json.p.hasOwnProperty("chatScroll")) {
-            if (valid.indexOf(json.p.chatScroll) !== -1) {
-                decide = json.p.chatScroll;
-            }
-        }
-        if (decide !== "") {
-            chatDirection = decide;
-        }
-    }
-
     function versionCompare(v1, v2) {
         var regex   = new RegExp("(\.0+)+");
             v1      = v1.replace(regex, "").split(".");
@@ -1024,11 +1009,11 @@
 
             if (versionCompare(options.version, version) < 0) {
                 var message = "<li class=\"chat_notification\">TabsOfAvabur has been updated to version "+version+"! <a href=\"https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js\" target=\"_blank\">Update</a> | <a href=\"https://github.com/edvordo/TabsOfAvabur/releases\" target=\"_blank\">Changelog</a></li>";
-                if (chatDirection === "up") {
+                if (options.scriptSettings.chat_direction === "up") {
                     $("#chatMessageList").prepend(message);
                 } else {
                     $("#chatMessageList").append(message);
-                    // TODO: Scroll to bottom ...
+                    scrollToBottom('#channelPreviewContent');
                 }
             } else {
                 checkForUpdateTimer = setTimeout(checkForUpdate, 24*60*60*1000);
@@ -1178,6 +1163,12 @@
         }
     }
 
+    function scrollToBottom(selector) {
+        $(selector).animate({
+            scrollTop: $(selector).prop("scrollHeight")
+        });
+    }
+
     function init() {
         loadOptions();
         loadDependencies();
@@ -1192,10 +1183,29 @@
         checkForUpdateTimer = setTimeout(checkForUpdate,30000);
     }
 
-    $(document).on("ajaxSuccess", handleAjaxSuccess);
 
     $(document).on("change", ".settingsChanger", function(e){
         changeSetting(this);
+    });
+
+    // inspect DOM changes
+    $(document).on('change', 'input[name="data-preference-id-12"]', function(e){
+        // e.target.value can be 0 or 1 => 0 - default, 1 - retarded
+        options.scriptSettings.chat_direction = parseInt(e.target.value) ? 'down' : 'up';
+        saveOptions();
+    });
+
+    // if the player uses edvordo/RoA-WSHookUp
+    $(document).on('roa-ws:login_info', function(e,d) {
+        options.scriptSettings.chat_direction = d.p.chatScroll;
+        saveOptions();
+    });
+
+    $(document).on('roa-ws:page:settings_preferences, roa-ws:page:settings_preferences_change', function(e,d) {
+        // 12 is the relevant option ..
+        // d.preferences[12] can be 0 or 1 => 0 - default, 1 - retarded
+        options.scriptSettings.chat_direction = parseInt(d.preferences[12]) ? 'down' : 'up';
+        saveOptions();
     });
 
     $(document).on("click", ".channelTab", function(e){
@@ -1222,9 +1232,9 @@
         if (channelOption.length > 0){
             $("#chatChannel").val(channelID);
         }
-        if (chatDirection === "down") {
+        if (options.scriptSettings.chat_direction === "down") {
             setTimeout(function(){
-                // TODO: Scroll to bottom
+                scrollToBottom("#chatMessageListWrapper");
             }, 500);
         }
     });
@@ -1373,8 +1383,8 @@
             hovering = setTimeout(function(){
                 if (options.scriptSettings.preview && OpenAndKeep && shouldShow) {
                     channelPreviewWrapper.show(0, function(){
-                        if (chatDirection === "down") {
-                            // TODO: Scroll to bottom
+                        if (options.scriptSettings.chat_direction === "down") {
+                            scrollToBottom('#channelPreviewContent');
                         }
                     });
 
