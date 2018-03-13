@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         TabsOfAvabur
 // @namespace    Reltorakii.magic
-// @version      4.1
+// @version      4.2
 // @description  Tabs the channels it finds in chat, can be sorted, with notif for new messages
 // @author       Reltorakii
 // @match        https://*.avabur.com/game*
 // @downloadURL  https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js
 // @updateURL    https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js
+// @require      https://cdn.rawgit.com/omichelsen/compare-versions/v3.1.0/index.js
 // @grant        none
 // ==/UserScript==
 /* jshint -W097 */
@@ -36,9 +37,8 @@
                 mapping             : {},
                 defaultChannels     : {}
             },
-            mutedChannels   : []
         },
-        version: "4.1"
+        version: "4.2"
     };
     var groupsMap               = {};
     var channelLog              = {};
@@ -265,6 +265,16 @@
                 href: "//maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css"
             })
             .appendTo("head");
+
+        // basically we are not in userscript manager context
+        if (typeof compareVersions !== 'function' && typeof GM_info !== 'object') {
+            $('<script>')
+                .attr({
+                    src: 'https://cdn.rawgit.com/omichelsen/compare-versions/v3.1.0/index.js',
+                    language: 'application/javascript'
+                })
+                .appendTo('head');
+        }
     }
 
     function prepareHTML() {
@@ -984,30 +994,13 @@
         mcgn.clone().val(name).attr("data-gnid", i).appendTo(wrapper);
     }
 
-    function versionCompare(v1, v2) {
-        var regex   = new RegExp("(\.0+)+");
-            v1      = v1.replace(regex, "").split(".");
-            v2      = v2.replace(regex, "").split(".");
-        var min     = Math.min(v1.length, v2.length);
-
-        var diff = 0;
-        for (var i = 0; i < min; i++) {
-            diff = parseInt(v1[i], 10) - parseInt(v2[i], 10);
-            if (diff !== 0) {
-                return diff;
-            }
-        }
-
-        return v1.length - v2.length;
-    }
-
     function checkForUpdate() {
         var version = "";
         $.get(internalUpdateUrl).done(function(res){
             var match = atob(res.content).match(/\/\/\s+@version\s+([^\n]+)/);
                 version = match[1];
 
-            if (versionCompare(options.version, version) < 0) {
+            if (compareVersions(options.version, version) < 0) {
                 var message = "<li class=\"chat_notification\">TabsOfAvabur has been updated to version "+version+"! <a href=\"https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js\" target=\"_blank\">Update</a> | <a href=\"https://github.com/edvordo/TabsOfAvabur/releases\" target=\"_blank\">Changelog</a></li>";
                 if (options.scriptSettings.chat_direction === "up") {
                     $("#chatMessageList").prepend(message);
@@ -1179,7 +1172,7 @@
         // TODO: many channels horizontal scroll
         $("#channelTabList").sortable({items:".channelTab",distance: 5});
         $("#channelTabList").disableSelection();
-        setTimeout(function(){$("#channelTabList > div:nth-child(2)").click();},2000);
+        setTimeout(function(){$("#channelTabList > div:nth-child(2)").click();},5000);
         checkForUpdateTimer = setTimeout(checkForUpdate,30000);
     }
 
