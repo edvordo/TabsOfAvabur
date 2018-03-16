@@ -37,6 +37,7 @@
                 mapping             : {},
                 defaultChannels     : {}
             },
+            mutedChannels   : []
         },
         version: "4.2"
     };
