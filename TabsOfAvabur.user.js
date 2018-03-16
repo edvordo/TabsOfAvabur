@@ -457,7 +457,7 @@
             .attr("type", "button")
             .attr("id", "ToAChannelMerger")
             .addClass("btn btn-primary btn-block")
-            .text("(WIP) Channel Manager")
+            .text("Channel Manager")
             .appendTo(r);
 
         $("<div>").addClass("clearfix").appendTo("#ToASettingsWindow");
