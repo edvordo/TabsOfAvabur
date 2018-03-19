@@ -14,65 +14,66 @@
 /* jshint -W043 */
 "use strict";
 
-(function($) {
+(function ($) {
 
-    var options                 = {
+    var options = {
         scriptSettings  : {
-            purge                       : true,
-            channel_remove              : false,
-            preview                     : true,
-            preview_reset               : false,
-            group_wires                 : false,
-            at_username                 : true,
-            join_channel_link           : true,
-            auto_join                   : false,
-            profile_tooltip_nickname    : true,
-            profile_tooltip_mention     : true,
-            profile_tooltip_quickscope  : true,
-            chat_direction              : 'up'
+            purge                     : true,
+            channel_remove            : false,
+            preview                   : true,
+            preview_reset             : false,
+            group_wires               : false,
+            at_username               : true,
+            join_channel_link         : true,
+            auto_join                 : false,
+            profile_tooltip_nickname  : true,
+            profile_tooltip_mention   : true,
+            profile_tooltip_quickscope: true,
+            chat_direction            : 'up'
         },
-        channelsSettings    : {
-            channelMerger       : {
-                groups              : [],
-                mapping             : {},
-                defaultChannels     : {}
+        channelsSettings: {
+            channelMerger: {
+                groups         : [],
+                mapping        : {},
+                defaultChannels: {}
             },
-            mutedChannels   : []
+            mutedChannels: []
         },
-        version: "4.2"
+        version         : "4.2"
     };
-    var groupsMap               = {};
-    var channelLog              = {};
-    var mainChannelID           = "2";
-    var currentChannel          = "Main";
-    var ServerMessagesChannel   = "SML_325725_2338723_CHC";
-    var CMDResposeChannel       = "CMDRC_4000_8045237_CHC";
-    var WhispersChannel         = "UW_7593725_3480021_CHC";
-    var WiresChannel            = "WC_0952340_3245901_CHC";
-    var MergedChannelsGroup     = "MCG_105704_4581101_CHC";
 
-    var GlobalChannel           = 1000000000;
-    var EventChannel            = 2000000000;
+    var groupsMap             = {};
+    var channelLog            = {};
+    var mainChannelID         = "2";
+    var currentChannel        = "Main";
+    var ServerMessagesChannel = "SML_325725_2338723_CHC";
+    var CMDResposeChannel     = "CMDRC_4000_8045237_CHC";
+    var WhispersChannel       = "UW_7593725_3480021_CHC";
+    var WiresChannel          = "WC_0952340_3245901_CHC";
+    var MergedChannelsGroup   = "MCG_105704_4581101_CHC";
 
-    var scriptChannels          = [ServerMessagesChannel, CMDResposeChannel, WhispersChannel, WiresChannel];
+    var GlobalChannel = 1000000000;
+    var EventChannel  = 2000000000;
 
-    var showedMoTD              = false;
-    var lastMoTDContent         = "";
+    var scriptChannels = [ServerMessagesChannel, CMDResposeChannel, WhispersChannel, WiresChannel];
 
-    var showingReconnectMsg     = false;
-    var internalUpdateUrl       = "https://api.github.com/repos/edvordo/TabsOfAvabur/contents/TabsOfAvabur.user.js";
+    var showedMoTD      = false;
+    var lastMoTDContent = "";
+
+    var showingReconnectMsg = false;
+    var internalUpdateUrl   = "https://api.github.com/repos/edvordo/TabsOfAvabur/contents/TabsOfAvabur.user.js";
 
     var hovering;
     var hoveringOverTab;
 
-    var checkForUpdateTimer     = 0;
+    var checkForUpdateTimer = 0;
 
     function returnCustomID(channel, resolved, cname, on) {
-        var obj =  {
-            cID: channel,
-            res: resolved,
+        var obj = {
+            cID : channel,
+            res : resolved,
             name: cname,
-            on: typeof on !== "undefined" ? on : name
+            on  : typeof on !== "undefined" ? on : name
         };
         return obj;
     }
@@ -80,12 +81,12 @@
     function resolveChannelID(channel) {
         var channelID;
         var origChannelName = channel;
-        var resolved = true;
+        var resolved        = true;
         if (channel === "GLOBAL") {
             channel = "Global";
         } else if (channel === "CLAN") {
             channel = "Clan";
-        } else if (channel.substr(0,4) === "AREA") {
+        } else if (channel.substr(0, 4) === "AREA") {
             channel = "Area";
         } else if (channel === "HELP") {
             channel = "Help";
@@ -106,20 +107,20 @@
         }
         var map = {
             "Global": "GLOBAL",
-            "Clan": "CLAN",
-            "Area": "AREA",
-            "Help": "HELP",
-            "Staff": "STAFF",
-            "Trade": "TRADE"
+            "Clan"  : "CLAN",
+            "Area"  : "AREA",
+            "Help"  : "HELP",
+            "Staff" : "STAFF",
+            "Trade" : "TRADE"
         };
         if (typeof map[origChannelName] !== "undefined") {
             origChannelName = map[origChannelName];
         }
 
         channelID = 0;
-        $("select#chatChannel option").each(function(i,e){
+        $("select#chatChannel option").each(function (i, e) {
             var n = $(e).attr("id");
-            if (n==="channel"+channel) {
+            if (n === "channel" + channel) {
                 channelID = $(e).attr("value");
             }
         });
@@ -127,15 +128,15 @@
             channelID = MergedChannelsGroup + "_MCGID_" + groupsMap[origChannelName];
         }
 
-        if (origChannelName == "GLOBAL"){
+        if (origChannelName == "GLOBAL") {
             channelID = GlobalChannel;
         }
-        if (origChannelName == "Event"){
+        if (origChannelName == "Event") {
             channelID = EventChannel;
         }
 
         if (channelID === 0) {
-            resolved = false;
+            resolved  = false;
             channelID = "2";// Main
         }
 
@@ -150,7 +151,7 @@
             color = "";
         }
         if (color === "" || typeof color === "undefined") {
-            $(".chatChannel").each(function(i,e){
+            $(".chatChannel").each(function (i, e) {
                 if ($(e).attr("data-id") === channelName) {
                     color = $(e).css("background-color");
                 }
@@ -178,31 +179,33 @@
                 .attr("id", "channelTab" + channel.channelID)
                 .attr("data-channel", channel.channelID)
                 .addClass("border2 ui-element channelTab")
-                .css({
-                    color: channel.channelColor
-                })
+                .css(
+                    {
+                        color: channel.channelColor
+                    }
+                )
                 .appendTo("#channelTabList");
             tab = $("#channelTab" + channel.channelID);
         }
-        var channelTabLabel = "#"+channel.channelName;
+        var channelTabLabel = "#" + channel.channelName;
         tab.text(channelTabLabel).css({color: channel.channelColor});
         if (channel.newMessages && !channel.muted) {
 
-            if ($(".Ch"+channel.channelID+"Badge").length === 0) {
+            if ($(".Ch" + channel.channelID + "Badge").length === 0) {
                 var badge = $("<span>")
                     .addClass("ChBadge")
                     .addClass("border2")
-                    .addClass("Ch"+channel.channelID+"Badge")
+                    .addClass("Ch" + channel.channelID + "Badge")
                     .text(channel.newMessagesCount)
-                    .appendTo("#channelTab"+channel.channelID);
+                    .appendTo("#channelTab" + channel.channelID);
             } else {
-                $(".Ch"+channel.channelID+"Badge").text(channel.newMessagesCount);
+                $(".Ch" + channel.channelID + "Badge").text(channel.newMessagesCount);
             }
         }
         if (channel.muted) {
             $("<span>")
                 .addClass("ChBadge fa fa-times border2 ui-element")
-                .appendTo("#channelTab"+channel.channelID);
+                .appendTo("#channelTab" + channel.channelID);
         }
     }
 
@@ -214,35 +217,35 @@
         $("<span>")
             .addClass("fa")
             .addClass("fa-cogs")
-            .css({
-                color: "#ffd700",
-                fontWeight: 500
-            })
+            .css(
+                {
+                    color     : "#ffd700",
+                    fontWeight: 500
+                }
+            )
             .appendTo("#ToASettings");
     }
 
     function randomInt(min, max) {
-        return Math.round( Math.random() * ( max - min ) ) + min;
+        return Math.round(Math.random() * (max - min)) + min;
     }
 
     function randomColor() {
         var color = "#";
         for (var i = 0; i < 6; i++) {
-            color += Math.floor(Math.random()*15).toString(16);
+            color += Math.floor(Math.random() * 15).toString(16);
         }
         return color;
     }
 
     function randomName(min, max) {
-        var a = "aeiou".split("");
-        var b = "rtzpsdfghklmnbvc".split("");
-        var l = randomInt(min, max);
+        var a    = "aeiou".split("");
+        var b    = "rtzpsdfghklmnbvc".split("");
+        var l    = randomInt(min, max);
         var name = "";
-        for (var i = 0; i < l; i++)
-        {
+        for (var i = 0; i < l; i++) {
             var charset = i % 2 === 0 ? a : b;
-            if ( i === 0 )
-            {
+            if (i === 0) {
                 charset = Math.random() < 0.5 ? a : b;
             }
             var letter = charset[randomInt(0, charset.length - 1)];
@@ -252,8 +255,8 @@
     }
 
     function ucfirst(str) {
-        var result  = "";
-        var first   = str.charAt(0).toUpperCase();
+        var result = "";
+        var first  = str.charAt(0).toUpperCase();
 
         return first + str.substr(1);
     }
@@ -261,19 +264,23 @@
     function loadDependencies() {
         //<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
         $("<link>")
-            .attr({
-                rel: "stylesheet",
-                href: "//maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css"
-            })
+            .attr(
+                {
+                    rel : "stylesheet",
+                    href: "//maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css"
+                }
+            )
             .appendTo("head");
 
         // basically we are not in userscript manager context
         if (typeof compareVersions !== 'function' && typeof GM_info !== 'object') {
             $('<script>')
-                .attr({
-                    src: 'https://cdn.rawgit.com/omichelsen/compare-versions/v3.1.0/index.js',
-                    language: 'application/javascript'
-                })
+                .attr(
+                    {
+                        src     : 'https://cdn.rawgit.com/omichelsen/compare-versions/v3.1.0/index.js',
+                        language: 'application/javascript'
+                    }
+                )
                 .appendTo('head');
         }
     }
@@ -318,7 +325,10 @@
         $("<span>")
             .addClass("border2 ui-element fa fa-unlink ruby cpa")
             .attr("id", "CPARemove")
-            .attr("title", "Clear the channel and remove it from tabs\nIf any new messages pop into it, it will come back.")
+            .attr(
+                "title",
+                "Clear the channel and remove it from tabs\nIf any new messages pop into it, it will come back."
+            )
             .appendTo("#channelPreviewActions");
 
         $("<div>")
@@ -327,9 +337,7 @@
 
         $("<div>")
             .attr("id", "channelPreviewMessages")
-            .css({
-                padding:"2px",
-            })
+            .css({padding: "2px"})
             .appendTo("#channelPreviewContent");
 
         /**
@@ -434,11 +442,11 @@
 
         $("<h5>")
             .css("text-align", "center")
-            .text("TabsOfAvabur v"+options.version+" - Settings")
+            .text("TabsOfAvabur v" + options.version + " - Settings")
             .appendTo("#ToASettingsWindow");
 
         $("<div>")
-            .attr("id","ToASWMenu")
+            .attr("id", "ToASWMenu")
             .appendTo("#ToASettingsWindow");
 
         var t = $("<div>")
@@ -473,7 +481,7 @@
 
         var st  = $("<h6>").addClass("text-center");
         var t2  = $("<label>");
-        var t2a = $("<input>").attr({"type":"checkbox"}).addClass("settingsChanger");
+        var t2a = $("<input>").attr({"type": "checkbox"}).addClass("settingsChanger");
         var t2w = t.clone().removeClass("text-center");
 
         st.clone().text("Script settings").appendTo("#ToASettingsScriptSettings");
@@ -484,7 +492,7 @@
                     .text(" Allow channel message purging")
                     .prepend(
                         t2a.clone()
-                            .attr("data-setting","purge")
+                            .attr("data-setting", "purge")
                             .prop("checked", options.scriptSettings.purge)
                     )
             )
@@ -496,7 +504,7 @@
                     .text(" Allow removing channel form tabs")
                     .prepend(
                         t2a.clone()
-                            .attr("data-setting","channel_remove")
+                            .attr("data-setting", "channel_remove")
                             .prop("checked", options.scriptSettings.channel_remove)
                     )
             )
@@ -509,7 +517,7 @@
                     .text(" Preview channel on tab hover")
                     .prepend(
                         t2a.clone()
-                            .attr("data-setting","preview")
+                            .attr("data-setting", "preview")
                             .prop("checked", options.scriptSettings.preview)
                     )
             )
@@ -522,7 +530,7 @@
                     .text(" Allow marking channels as read")
                     .prepend(
                         t2a.clone()
-                            .attr("data-setting","preview_reset")
+                            .attr("data-setting", "preview_reset")
                             .prop("checked", options.scriptSettings.preview_reset)
                     )
             )
@@ -535,7 +543,7 @@
                     .text(" Group wires into their own channel")
                     .prepend(
                         t2a.clone()
-                            .attr("data-setting","group_wires")
+                            .attr("data-setting", "group_wires")
                             .prop("checked", options.scriptSettings.group_wires)
                     )
             )
@@ -548,7 +556,7 @@
                     .text(" Make @username clickable")
                     .prepend(
                         t2a.clone()
-                            .attr("data-setting","at_username")
+                            .attr("data-setting", "at_username")
                             .prop("checked", options.scriptSettings.at_username)
                     )
             )
@@ -558,10 +566,11 @@
         t2w.clone()
             .append(
                 t2.clone()
-                    .html(" Make '/join channel' clickable. <span class='fa fa-info-circle ToATooltip' title='After you click on the link, the chat message will be filled with a /join channel text.' data-toggle='tooltip' data-placement='top' data-html='true'></span>")
+                    .html(
+                        " Make '/join channel' clickable. <span class='fa fa-info-circle ToATooltip' title='After you click on the link, the chat message will be filled with a /join channel text.' data-toggle='tooltip' data-placement='top' data-html='true'></span>")
                     .prepend(
                         t2a.clone()
-                            .attr("data-setting","join_channel_link")
+                            .attr("data-setting", "join_channel_link")
                             .prop("checked", options.scriptSettings.join_channel_link)
                     )
             )
@@ -571,10 +580,11 @@
         t2w.clone()
             .append(
                 t2.clone()
-                    .html(" Autojoin clicked channel. <span class='fa fa-info-circle ToATooltip' title='This is designed to work with the previous option to replace the /join <a>channel</a> message.<br>If this option is enabled, the prefilled message to join a channel will be automatically sent.' data-toggle='tooltip' data-placement='top' data-html='true'></span>")
+                    .html(
+                        " Autojoin clicked channel. <span class='fa fa-info-circle ToATooltip' title='This is designed to work with the previous option to replace the /join <a>channel</a> message.<br>If this option is enabled, the prefilled message to join a channel will be automatically sent.' data-toggle='tooltip' data-placement='top' data-html='true'></span>")
                     .prepend(
                         t2a.clone()
-                            .attr("data-setting","auto_join")
+                            .attr("data-setting", "auto_join")
                             .prop("checked", options.scriptSettings.auto_join)
                     )
             )
@@ -587,7 +597,7 @@
                     .html(" Enable Ni[c]kname shortcut")
                     .prepend(
                         t2a.clone()
-                            .attr("data-setting","profile_tooltip_nickname")
+                            .attr("data-setting", "profile_tooltip_nickname")
                             .prop("checked", options.scriptSettings.profile_tooltip_nickname)
                     )
             )
@@ -600,7 +610,7 @@
                     .html(" Enable @m[e]ntion shortcut")
                     .prepend(
                         t2a.clone()
-                            .attr("data-setting","profile_tooltip_mention")
+                            .attr("data-setting", "profile_tooltip_mention")
                             .prop("checked", options.scriptSettings.profile_tooltip_mention)
                     )
             )
@@ -613,7 +623,7 @@
                     .html(" Enable [Q]uickscope shortcut")
                     .prepend(
                         t2a.clone()
-                            .attr("data-setting","profile_tooltip_quickscope")
+                            .attr("data-setting", "profile_tooltip_quickscope")
                             .prop("checked", options.scriptSettings.profile_tooltip_quickscope)
                     )
             )
@@ -658,7 +668,10 @@
             .appendTo("#ToASettingsChannelMerger")
             .before();
         var chgl = t2.clone().text("Channel Groups:").insertBefore("#ToASChMMergedChannelsGroupsHolder");
-        $("<button>").addClass("fa fa-plus btn btn-primary emerald pull-right btn-xs").attr("id", "ToASChMAddGroup").insertAfter(chgl);
+        $("<button>")
+            .addClass("fa fa-plus btn btn-primary emerald pull-right btn-xs")
+            .attr("id", "ToASChMAddGroup")
+            .insertAfter(chgl);
 
         // clearfix channel merger
         $("<div>").addClass("clearfix").appendTo("#ToASettingsChannelMerger");
@@ -683,14 +696,38 @@
          */
         var ToAExtraDivider = $("<span>").text(" · ");
 
-        ToAExtraDivider.clone().addClass("ToAPONickname").toggleClass("hidden", !options.scriptSettings.profile_tooltip_nickname).appendTo("#profileOptionTooltip");
-        $("<a>").addClass("ToAPONickname").toggleClass("hidden", !options.scriptSettings.profile_tooltip_nickname).text("Ni[c]kname").attr("id", "profileOptionNick").appendTo("#profileOptionTooltip");
+        ToAExtraDivider.clone()
+            .addClass("ToAPONickname")
+            .toggleClass("hidden", !options.scriptSettings.profile_tooltip_nickname)
+            .appendTo("#profileOptionTooltip");
+        $("<a>")
+            .addClass("ToAPONickname")
+            .toggleClass("hidden", !options.scriptSettings.profile_tooltip_nickname)
+            .text("Ni[c]kname")
+            .attr("id", "profileOptionNick")
+            .appendTo("#profileOptionTooltip");
 
-        ToAExtraDivider.clone().addClass("ToAPOMention").toggleClass("hidden", !options.scriptSettings.profile_tooltip_mention).appendTo("#profileOptionTooltip");
-        $("<a>").addClass("ToAPOMention").toggleClass("hidden", !options.scriptSettings.profile_tooltip_mention).text("@m[e]ntion").attr("id", "profileOptionAt").appendTo("#profileOptionTooltip");
+        ToAExtraDivider.clone()
+            .addClass("ToAPOMention")
+            .toggleClass("hidden", !options.scriptSettings.profile_tooltip_mention)
+            .appendTo("#profileOptionTooltip");
+        $("<a>")
+            .addClass("ToAPOMention")
+            .toggleClass("hidden", !options.scriptSettings.profile_tooltip_mention)
+            .text("@m[e]ntion")
+            .attr("id", "profileOptionAt")
+            .appendTo("#profileOptionTooltip");
 
-        ToAExtraDivider.clone().addClass("ToAPOQuickscope").toggleClass("hidden", !options.scriptSettings.profile_tooltip_quickscope).appendTo("#profileOptionTooltip");
-        $("<a>").addClass("ToAPOQuickscope").toggleClass("hidden", !options.scriptSettings.profile_tooltip_quickscope).text("[Q]uickscope").attr("id", "profileOptionQuickScope").appendTo("#profileOptionTooltip");
+        ToAExtraDivider.clone()
+            .addClass("ToAPOQuickscope")
+            .toggleClass("hidden", !options.scriptSettings.profile_tooltip_quickscope)
+            .appendTo("#profileOptionTooltip");
+        $("<a>")
+            .addClass("ToAPOQuickscope")
+            .toggleClass("hidden", !options.scriptSettings.profile_tooltip_quickscope)
+            .text("[Q]uickscope")
+            .attr("id", "profileOptionQuickScope")
+            .appendTo("#profileOptionTooltip");
 
         // init
         $("#ToASettingsWindow").hide();
@@ -698,87 +735,87 @@
         $("#ToASettingsChannelMerger").hide();
         $("#ToASettingsSaved").hide();
         $(".ToATooltip").tooltip();
-        $("#ToASettingsWindow").draggable({handle:"h5"});
+        $("#ToASettingsWindow").draggable({handle: "h5"});
         /**
          * CSS
          */
-        $("<style>").text(""+
-            "#channelTabListWrapper{margin-bottom: -1px;position: relative;}#channelTabList{overflow: hidden;border-radius: 4px 4px 0 0;font-size: 9pt;}\n"+
-            ".ToASettings, .channelTab{cursor: pointer;margin: 2px 2px 0 2px;border-radius: 4px 4px 0 0;display: inline-block;padding: 2px 5px;position:relative;}\n"+
-            "#chatMessageList li:not(.processed){display: none;}\n"+
-            "/*#chatMessageList li.processed{display: list-item;}*/\n"+
-            ".ChBadge{display:inline-block;margin-left:3px;padding:1px 4px;font-size:7pt;vertical-align:top;border-color:green!important;color:#fff !important;}\n"+
-            ".muted-badge{position:absolute;left:5px;top:5px;}\n"+
-            ".mCSB_scrollTools.mCSB_scrollTools_horizontal{top:15px!important;}\n"+
-            ".mCSB_horizontal.mCSB_inside>.mCSB_container{margin-bottom: 0 !important;}\n"+
-            "#channelPreviewWrapper{position:absolute;font-size:9pt;min-width:350px;max-width:500px;background-color:rgba(0,0,0,.75)!important;}\n"+
-            "#channelPreviewContent{max-height: 250px;overflow-x: hidden;}\n"+
-            "#channelPreviewActions{position:absolute;right:2px;top:2px;}\n"+
-            ".cpa{display:inline-block;margin-left:2px;padding: 1px 3px;font-size:9pt;vertical-align:top;cursor:pointer;}\n"+
-            "#channelTabContextMenu{position:absolute;width:175px;background-color:rgba(0,0,0,.75)!important;}\n"+
-            ".cctmButton{text-align:left!important;}\n"+
-            "#ToASettingsWindow{position:absolute!important;width:50%;min-width: 500px;top:150px;left:25%;background-color:rgba(0,0,0,.75)!important;z-index:150;}\n"+
-            ".cctmButton>span{margin: 0 15px 0 5px;font-size:8.5pt;padding:2px;}\n"+
-            "#channelTabContextMenu .cctmButton {display:block;width:100%;border-left:0;}\n"+
-            "#ToASettingsWindowContent label{font-size:10pt;}\n"+
-            "#ToASettingsWindowContent {padding-top:5px;}\n"+
-            "#ToASettingsWindowClose{position:absolute;right:2px;top:2px;color:#f00;padding:1px 4px;cursor:pointer;}\n"+
-            ".ToASChannelsHolder{padding: 2px;margin:3px auto;width:97%;}\n"+
-            ".ChMChannelWrapper{display:inline-block;margin:1px 2px;padding:1px 4px;font-size:10pt;}\n"+
-            ".ChMMChX{margin-right:4px;padding:1px 2px;cursor:pointer;}\n"+
-            "#ToASettingsWindow .tooltip{width:350px;}\n"+
-            "#ToASettingsWindow .tooltip-inner{max-width:100%;}\n"+
-            ".hand{curson: pointer;}\n"+
-            "#ToASChMAddGroup, .ToASChMChGRemove{margin-top: 0;}\n"+
-            ".incsort{border-radius: 0 !important; margin: 3px 1px; padding: 2px;}\n"+
-            ".chTabSelected {background-image: " + $("#navigationWrapper > h5").css("background-image")+" !important;}\n"+
-            "#ToASChMMergedChannelsGroupsHolder > .incsort > span:nth-of-type(1) {border-left-width: 7px !important;}\n"+
-            "@media screen and (max-width:768px){#ToASettingsWindow{left:5%;}}")
+        $("<style>").text(` 
+#channelTabListWrapper {margin-bottom: -1px;position: relative;}
+#channelTabList {overflow: hidden;border-radius: 4px 4px 0 0;font-size: 9pt;}
+.ToASettings, .channelTab {cursor: pointer;margin: 2px 2px 0 2px;border-radius: 4px 4px 0 0;display: inline-block;padding: 2px 5px;position:relative;}
+#chatMessageList li:not(.processed) {display: none;}
+/*#chatMessageList li.processed{display: list-item;}*/
+.ChBadge {display:inline-block;margin-left:3px;padding:1px 4px;font-size:7pt;vertical-align:top;border-color:green!important;color:#fff !important;}
+.muted-badge {position:absolute;left:5px;top:5px;}
+#channelPreviewWrapper {position:absolute;font-size:9pt;min-width:350px;max-width:500px;background-color:rgba(0,0,0,.75)!important;}
+#channelPreviewContent{max-height: 250px;overflow-x: hidden;}
+#channelPreviewActions{position:absolute;right:2px;top:2px;}
+.cpa{display:inline-block;margin-left:2px;padding: 1px 3px;font-size:9pt;vertical-align:top;cursor:pointer;}
+#channelTabContextMenu{position:absolute;width:175px;background-color:rgba(0,0,0,.75)!important;}
+.cctmButton{text-align:left!important;}
+#ToASettingsWindow{position:absolute!important;width:50%;min-width: 500px;top:150px;left:25%;background-color:rgba(0,0,0,.75)!important;z-index:150;}
+.cctmButton>span{margin: 0 15px 0 5px;font-size:8.5pt;padding:2px;}
+#channelTabContextMenu .cctmButton {display:block;width:100%;border-left:0;}
+#ToASettingsWindowContent label{font-size:10pt;}
+#ToASettingsWindowContent {padding-top:5px;}
+#ToASettingsWindowClose{position:absolute;right:2px;top:2px;color:#f00;padding:1px 4px;cursor:pointer;}
+.ToASChannelsHolder{padding: 2px;margin:3px auto;width:97%;}
+.ChMChannelWrapper{display:inline-block;margin:1px 2px;padding:1px 4px;font-size:10pt;}
+.ChMMChX{margin-right:4px;padding:1px 2px;cursor:pointer;}
+#ToASettingsWindow .tooltip{width:350px;}
+#ToASettingsWindow .tooltip-inner{max-width:100%;}
+.hand{curson: pointer;}
+#ToASChMAddGroup, .ToASChMChGRemove{margin-top: 0;}
+.incsort{border-radius: 0 !important; margin: 3px 1px; padding: 2px;}
+.chTabSelected {background: var(--nav-background-color);background-image: linear-gradient(to bottom,var(--nav-gradient-first-color) 0,var(--nav-gradient-second-color) 100%)}
+#ToASChMMergedChannelsGroupsHolder > .incsort > span:nth-of-type(1) {border-left-width: 7px !important;}
+@media screen and (max-width:768px){#ToASettingsWindow{left:5%;}}`)
             .appendTo("body");
     }
 
     var SSN = 0;
+
     function saveOptions() {
         clearTimeout(SSN);
         var opts = JSON.stringify(options);
         localStorage.setItem("ToAOPTS", opts);
         $("#ToASettingsSaved").show();
-        SSN = setTimeout(function(){
+        SSN = setTimeout(function () {
             $("#ToASettingsSaved").fadeOut();
         }, 3E3);
     }
 
     function changeSetting(e) {
-        var setting = $(e).attr("data-setting");
+        var setting                     = $(e).attr("data-setting");
         options.scriptSettings[setting] = $(e).prop("checked");
-        var match = setting.match("^profile_tooltip_([a-z]+)");
+        var match                       = setting.match("^profile_tooltip_([a-z]+)");
         if (match !== null) {
             var POOption = ucfirst(match[1]);
-            $(".ToAPO"+POOption).toggleClass("hidden");
+            $(".ToAPO" + POOption).toggleClass("hidden");
         }
         saveOptions();
     }
 
     function resetUnreadCount() {
-        var channelID                           = hoveringOverTab;
-        channelLog[channelID].newMessages       = false;
-        channelLog[channelID].newMessagesCount  = 0;
+        var channelID                          = hoveringOverTab;
+        channelLog[channelID].newMessages      = false;
+        channelLog[channelID].newMessagesCount = 0;
         updateChannelList(channelLog[channelID]);
         $("#channelPreviewWrapper").hide();
         $("#channelTabContextMenu").hide();
     }
 
-    function purgeChannel(andRemove,confirmToo) {
-        andRemove       = typeof andRemove==="undefined"?options.scriptSettings.channel_remove:andRemove;
-        confirmToo      = typeof confirmToo==="undefined"?false:confirmToo;
+    function purgeChannel(andRemove, confirmToo) {
+        andRemove       = typeof andRemove === "undefined" ? options.scriptSettings.channel_remove : andRemove;
+        confirmToo      = typeof confirmToo === "undefined" ? false : confirmToo;
         var channelID   = hoveringOverTab;
         var channelName = channelLog[channelID].channelName;
-        var confirmText = "Are you sure you want purge the \""+channelName+"\" channel"+(andRemove?" and remove it from tabs":"")+"?\nThis only affects your screen.";
-        if (confirmToo || window.confirm(confirmText)){
-            $(".chc_"+channelID).remove();
+        var confirmText = `Are you sure you want purge the "${channelName}" channel${(andRemove ? 'and remove it from tabs' : '')}?\nThis only affects your screen.`;
+        if (confirmToo || window.confirm(confirmText)) {
+            $(".chc_" + channelID).remove();
             resetUnreadCount();
             if (andRemove) {
-                $("#channelTab"+channelID).remove();
+                $("#channelTab" + channelID).remove();
                 //delete channelLog[channelID];
                 $("#channelTabMain").click();
                 $("#channelPreviewWrapper").hide();
@@ -787,11 +824,11 @@
         }
     }
 
-    function loadOptions(){
+    function loadOptions() {
         var stored = localStorage.getItem("ToAOPTS");
         try {
             var parsed = JSON.parse(stored);
-            if (typeof parsed.scriptSettings !== "undefined"){
+            if (typeof parsed.scriptSettings !== "undefined") {
                 if (typeof parsed.scriptSettings.purge !== "undefined") {
                     options.scriptSettings.purge = !!parsed.scriptSettings.purge;
                 }
@@ -837,9 +874,10 @@
                     if (typeof parsed.channelsSettings.channelMerger.groups !== "undefined" && Array.isArray(parsed.channelsSettings.channelMerger.groups)) {
                         for (var ccg in parsed.channelsSettings.channelMerger.groups) {
                             var groupName = parsed.channelsSettings.channelMerger.groups[ccg];
-                            if (typeof groupName === "string" && options.channelsSettings.channelMerger.groups.indexOf(groupName) === -1) {
+                            if (typeof groupName === "string" && options.channelsSettings.channelMerger.groups.indexOf(
+                                    groupName) === -1) {
                                 options.channelsSettings.channelMerger.groups.push(groupName);
-                                groupsMap[groupName] = randomName(3,5) + "_" + randomInt(5,9);
+                                groupsMap[groupName] = randomName(3, 5) + "_" + randomInt(5, 9);
                             }
                         }
                     }
@@ -853,7 +891,7 @@
             }
             //$.extend(true, options, parsed || {});
             saveOptions();
-        } catch(e) {
+        } catch (e) {
             localStorage.removeItem("ToAOPTS");
             // console.log(e);
         }
@@ -861,62 +899,72 @@
 
     function createChannelEntry(newChannel, newChannelID, newChannelColor) {
         channelLog[newChannelID] = {
-            channelName: newChannel,
-            channelID: newChannelID,
-            channelColor: newChannelColor,
-            messages: 0,
-            newMessages: false,
+            channelName     : newChannel,
+            channelID       : newChannelID,
+            channelColor    : newChannelColor,
+            messages        : 0,
+            newMessages     : false,
             newMessagesCount: 0,
-            muted: options.channelsSettings.mutedChannels.indexOf(newChannel) !== -1
+            muted           : options.channelsSettings.mutedChannels.indexOf(newChannel) !== -1
         };
     }
 
     function loadAllChannels() {
-        $("#chatChannel option").each(function(i,e){
-            var channelName     = $(e).text();
-            var channelInfo     = resolveChannelID(channelName);
-            var channelID       = channelInfo.cID;
-            var channelColor    = resolveChannelColor(channelID, channelInfo.name);
-            if (typeof channelLog[channelID] === "undefined") {
+        $("#chatChannel option").each(function (i, e) {
+            var channelName  = $(e).text();
+            var channelInfo  = resolveChannelID(channelName);
+            var channelID    = channelInfo.cID;
+            var channelColor = resolveChannelColor(channelID, channelInfo.name);
+            if (!channelLog.hasOwnProperty(channelID)) {
                 createChannelEntry(channelInfo.on, channelID, channelColor);
             }
         });
-        if (typeof channelLog[GlobalChannel] === "undefined") {
+        if (!channelLog.hasOwnProperty(GlobalChannel)) {
             createChannelEntry("GLOBAL", GlobalChannel, resolveChannelColor(GlobalChannel, "Global"));
         }
-        if (typeof channelLog[EventChannel] === "undefined") {
+        if (!channelLog.hasOwnProperty(EventChannel)) {
             createChannelEntry("Event", EventChannel, resolveChannelColor(EventChannel, "Event"));
         }
         // [ServerMessagesChannel, CMDResposeChannel, WhispersChannel, WiresChannel];
-        if (typeof channelLog[ServerMessagesChannel] === "undefined") {
-            createChannelEntry("Server Messages", ServerMessagesChannel, resolveChannelColor(ServerMessagesChannel, "Server Messages"));
+        if (!channelLog.hasOwnProperty(ServerMessagesChannel)) {
+            createChannelEntry(
+                "Server Messages",
+                ServerMessagesChannel,
+                resolveChannelColor(ServerMessagesChannel, "Server Messages")
+            );
         }
-        if (typeof channelLog[CMDResposeChannel] === "undefined") {
-            createChannelEntry("Info Channel", CMDResposeChannel, resolveChannelColor(CMDResposeChannel, "Info Channel"));
+        if (!channelLog.hasOwnProperty(CMDResposeChannel)) {
+            createChannelEntry(
+                "Info Channel",
+                CMDResposeChannel,
+                resolveChannelColor(CMDResposeChannel, "Info Channel")
+            );
         }
-        if (typeof channelLog[WhispersChannel] === "undefined") {
+        if (!channelLog.hasOwnProperty(WhispersChannel)) {
             createChannelEntry("Whispers Log", WhispersChannel, resolveChannelColor(WhispersChannel, "Whispers Log"));
         }
-        if (typeof channelLog[WiresChannel] === "undefined") {
+        if (!channelLog.hasOwnProperty(WiresChannel)) {
             createChannelEntry("Wires Log", WiresChannel, resolveChannelColor(WiresChannel, "Wires Log"));
         }
     }
 
-    function quickScopeUser(){
+    function quickScopeUser() {
         if (!options.scriptSettings.profile_tooltip_quickscope) {
             return false;
         }
-        $("#chatMessage").text("/whois "+$("#profileOptionTooltip").attr("data-username"));
+        $("#chatMessage").text("/whois " + $("#profileOptionTooltip").attr("data-username"));
         $("#chatSendMessage").click();
         $("#profileOptionTooltip").hide();
-        setTimeout(function(){$("#channelTab"+CMDResposeChannel).click();},1000);
+        setTimeout(function () {
+            $("#channelTab" + CMDResposeChannel).click();
+        }, 1000);
     }
 
     function mentionUser() {
         if (!options.scriptSettings.profile_tooltip_mention) {
             return false;
         }
-        $("#chatMessage").append(" @"+$("#profileOptionTooltip").attr("data-username")).focus();
+        $("#chatMessage").append(" @" + $("#profileOptionTooltip").attr("data-username")).focus();
         $("#profileOptionTooltip").hide();
     }
 
@@ -925,30 +973,32 @@
             return false;
         }
         var username = $("#profileOptionTooltip").attr("data-username");
-        $.confirm({
-            "title"     : "Nickname for "+username,
-            "message"   : "<input type=\"text\" id=\"ToASPONicknameName\" style=\"width:100%;\" placeholder=\"Leave blank to unnickname\">",
-            "buttons"   : {
-                "Nickname"       : {
-                    "class"     : "green",
-                    "action"    : function() {
-                        var newNick = $("#ToASPONicknameName").val();
-                        if (newNick.match(/^\s*$/)) {
-                            $("#chatMessage").text("/unnickname "+username);
-                        } else {
-                            $("#chatMessage").text("/nickname "+username+" "+newNick);
+        $.confirm(
+            {
+                "title"  : "Nickname for " + username,
+                "message": "<input type=\"text\" id=\"ToASPONicknameName\" style=\"width:100%;\" placeholder=\"Leave blank to unnickname\">",
+                "buttons": {
+                    "Nickname": {
+                        "class" : "green",
+                        "action": function () {
+                            var newNick = $("#ToASPONicknameName").val();
+                            if (newNick.match(/^\s*$/)) {
+                                $("#chatMessage").text("/unnickname " + username);
+                            } else {
+                                $("#chatMessage").text("/nickname " + username + " " + newNick);
+                            }
+                            $("#chatSendMessage").click();
                         }
-                        $("#chatSendMessage").click();
-                    }
-                },
-                "Cancel"       : {
-                    "class"     : "red",
-                    "action"    : function() {
+                    },
+                    "Cancel"  : {
+                        "class" : "red",
+                        "action": function () {
+                        }
                     }
                 }
             }
-        });
-        setTimeout(function() {
+        );
+        setTimeout(function () {
             $("#ToASPONicknameName").val("").focus();
         }, 500);
     }
@@ -958,12 +1008,12 @@
     }
 
     function updateGroupName() {
-        var newName     = $(this).val();
-        var groupID     = $(this).attr("data-gnid");
-        var origName    = options.channelsSettings.channelMerger.groups[groupID];
-        var origGID     = groupsMap[origName];
+        var newName  = $(this).val();
+        var groupID  = $(this).attr("data-gnid");
+        var origName = options.channelsSettings.channelMerger.groups[groupID];
+        var origGID  = groupsMap[origName];
         delete groupsMap[origName];
-        groupsMap[newName] = origGID;
+        groupsMap[newName]                                     = origGID;
         options.channelsSettings.channelMerger.groups[groupID] = newName;
         $(this).parent().attr("data-group", newName);
         for (var x in options.channelsSettings.channelMerger.mapping) {
@@ -972,7 +1022,7 @@
             }
         }
         var groupChannelID = MergedChannelsGroup + "_MCGID_" + groupsMap[newName];
-        if (typeof channelLog[groupChannelID] !== "undefined") {
+        if (channelLog.hasOwnProperty(groupChannelID)) {
             channelLog[groupChannelID].channelName = newName;
             updateChannelList(channelLog[groupChannelID]);
         }
@@ -980,15 +1030,17 @@
     }
 
     function addChannelGroup(i, name) {
-        var mcgw    = $("<div>").addClass("border2 incsort input-group");
+        var mcgw = $("<div>").addClass("border2 incsort input-group");
 
-        var mcgigb  = $("<div>").addClass("input-group-btn");
+        var mcgigb = $("<div>").addClass("input-group-btn");
 
-        var mcgdb   = $("<button>").addClass("ToASChMChGRemove btn btn-primary btn-xs ruby");
-        var mcgn    = $("<input>").attr({type:"text",name:"mcg_cn"}).addClass("ToASChMmcgName");
+        var mcgdb = $("<button>").addClass("ToASChMChGRemove btn btn-primary btn-xs ruby");
+        var mcgn  = $("<input>").attr({type: "text", name: "mcg_cn"}).addClass("ToASChMmcgName");
 
-        var mcgID = MergedChannelsGroup + "_MCGID_" + groupsMap[name];
-        var wrapper = mcgw.clone().attr({"id": mcgID,"data-group": name}).appendTo("#ToASChMMergedChannelsGroupsHolder");
+        var mcgID   = MergedChannelsGroup + "_MCGID_" + groupsMap[name];
+        var wrapper = mcgw.clone()
+            .attr({"id": mcgID, "data-group": name})
+            .appendTo("#ToASChMMergedChannelsGroupsHolder");
 
         var igb = mcgigb.clone().appendTo(wrapper);
         mcgdb.clone().attr("data-gnid", i).html("<i class=\"fa fa-times\"></i>").appendTo(igb);
@@ -997,12 +1049,12 @@
 
     function checkForUpdate() {
         var version = "";
-        $.get(internalUpdateUrl).done(function(res){
+        $.get(internalUpdateUrl).done(function (res) {
             var match = atob(res.content).match(/\/\/\s+@version\s+([^\n]+)/);
-                version = match[1];
+            version   = match[1];
 
             if (compareVersions(options.version, version) < 0) {
-                var message = "<li class=\"chat_notification\">TabsOfAvabur has been updated to version "+version+"! <a href=\"https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js\" target=\"_blank\">Update</a> | <a href=\"https://github.com/edvordo/TabsOfAvabur/releases\" target=\"_blank\">Changelog</a></li>";
+                var message = "<li class=\"chat_notification\">TabsOfAvabur has been updated to version " + version + "! <a href=\"https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js\" target=\"_blank\">Update</a> | <a href=\"https://github.com/edvordo/TabsOfAvabur/releases\" target=\"_blank\">Changelog</a></li>";
                 if (options.scriptSettings.chat_direction === "up") {
                     $("#chatMessageList").prepend(message);
                 } else {
@@ -1010,39 +1062,42 @@
                     scrollToBottom('#channelPreviewContent');
                 }
             } else {
-                checkForUpdateTimer = setTimeout(checkForUpdate, 24*60*60*1000);
+                checkForUpdateTimer = setTimeout(checkForUpdate, 24 * 60 * 60 * 1000);
             }
         });
     }
 
     function loadMessages(t) {
         if ($("#chatChannel option").length > 2) {
-            $("#chatMessageList li:not(.processed)").each(function(i,e){
-                var plainText       = $(e).text();
+            $("#chatMessageList li:not(.processed)").each(function (i, e) {
+                var plainText   = $(e).text();
                 // lets get rid of staff stuff
-                plainText           = plainText.replace(/^\[X\]\s*/, "");
+                plainText       = plainText.replace(/^\[X\]\s*/, "");
                 // now clean up spaces
-                plainText           = plainText.replace(/\s+/g, " ");
+                plainText       = plainText.replace(/\s+/g, " ");
                 // default message format [11:11:11] [Channel] (optional) the rest of the message
-                var defaultMsg      = plainText.match(/^\[([^\]]+)\]\s*(\[([^\]]+)\])?\s*(.*)/);
+                var defaultMsg  = plainText.match(/^\[([^\]]+)\]\s*(\[([^\]]+)\])?\s*(.*)/);
                 // clan MoTD: [11 Nov, 1111] Clan Message of the Day:
-                var isClanMoTD      = plainText.replace(/^\[[0-9]+\s+[a-zA-Z]+\,\s*[0-9]+\]\s*/, "").indexOf("Clan Message of the Day:") === 0;
+                var isClanMoTD  = plainText.replace(/^\[[0-9]+\s+[a-zA-Z]+\,\s*[0-9]+\]\s*/, "")
+                    .indexOf("Clan Message of the Day:") === 0;
                 // clan MoTD: [11 Nov, 1111] Message of the Day:
-                var isRoAMoTD       = plainText.replace(/^\[[0-9]+\s+[a-zA-Z]+\,\s*[0-9]+\]\s*/, "").indexOf("Message of the Day:") === 0;
+                var isRoAMoTD   = plainText.replace(/^\[[0-9]+\s+[a-zA-Z]+\,\s*[0-9]+\]\s*/, "")
+                    .indexOf("Message of the Day:") === 0;
                 // Staff Server Messages [11:11:11] [ Whatever the hell. ]
-                var isServerMsg     = plainText.match(/^\[[^\]]+\]\s*\[\s+.*\s+]$/);
+                var isServerMsg = plainText.match(/^\[[^\]]+\]\s*\[\s+.*\s+]$/);
                 // whisper detection
-                var isWhisper       = plainText.match(/^\[[^\]]+\]\s*Whisper\s*(to|from)\s*([^:]+)/);
-                    isWhisper       = isWhisper && $(this).closest("li").find("span:eq(2)").text().indexOf("Whisper") === 0;
+                var isWhisper   = plainText.match(/^\[[^\]]+\]\s*Whisper\s*(to|from)\s*([^:]+)/);
+                isWhisper       = isWhisper && $(this).closest("li").find("span:eq(2)").text().indexOf("Whisper") === 0;
                 // wire detection
-                var isWire          = plainText.match(/^\[[^\]]+\]\s*(You|[a-zA-Z]+)\s*wired\s*.*\s*(you|[a-zA-Z]+)\.$/);
+                var isWire      = plainText.match(/^\[[^\]]+\]\s*(You|[a-zA-Z]+)\s*wired\s*.*\s*(you|[a-zA-Z]+)\.$/);
                 // [11:11:11] Username sent a whatever to you.
 
-                var isChatNotif     = $(e).children(".chat_notification").length > 0 || $(e).hasClass("chat_notification");
+                var isChatNotif     = $(e).children(".chat_notification").length > 0 || $(e)
+                    .hasClass("chat_notification");
                 var isChatReconnect = $(e).attr("id") === "websocket_reconnect_line";
 
                 var channel = "";
-                if (currentChannel.match(/^[0-9]+$/)){
+                if (currentChannel.match(/^[0-9]+$/)) {
                     channel = channelLog[currentChannel].channelName;
                 } else if (currentChannel.indexOf(MergedChannelsGroup) === 0) {
                     channel = channelLog[currentChannel].channelName;
@@ -1052,66 +1107,67 @@
                     channel = currentChannel;
                 }
                 // var channel         = currentChannel=="Main" ? currentChannel : ;
-                var channelInfo     = resolveChannelID(channel);
+                var channelInfo = resolveChannelID(channel);
 
                 if (defaultMsg !== null) {
-                    channel         = typeof defaultMsg[3] === "undefined" ? "Main" : defaultMsg[3];
+                    channel = typeof defaultMsg[3] === "undefined" ? "Main" : defaultMsg[3];
                     if (channel !== "Main") {
-                        var validate = $(this).closest("li").find("span:eq(2)").text() === "[";
+                        var validate       = $(this).closest("li").find("span:eq(2)").text() === "[";
                         var quickscopeinfo = channel.match(/^Level:\s+[0-9]+/);
                         if (!validate && quickscopeinfo === null) {
                             channel = "Main";
                         }
                     }
-                    channelInfo     = resolveChannelID(channel);
+                    channelInfo = resolveChannelID(channel);
                 }
                 if (isClanMoTD) {
-                    channel         = "CLAN";
-                    channelInfo     = resolveChannelID(channel);
-                } else if (isServerMsg){
-                    channel         = "Server Messages";
-                    channelInfo     = resolveChannelID(channel);
-                } else if (isWhisper){
-                    channel         = "Whispers Log";
-                    channelInfo     = resolveChannelID(channel);
-                } else if (isWire && options.scriptSettings.group_wires){
-                    channel         = "Wires Log";
-                    channelInfo     = resolveChannelID(channel);
+                    channel     = "CLAN";
+                    channelInfo = resolveChannelID(channel);
+                } else if (isServerMsg) {
+                    channel     = "Server Messages";
+                    channelInfo = resolveChannelID(channel);
+                } else if (isWhisper) {
+                    channel     = "Whispers Log";
+                    channelInfo = resolveChannelID(channel);
+                } else if (isWire && options.scriptSettings.group_wires) {
+                    channel     = "Wires Log";
+                    channelInfo = resolveChannelID(channel);
                 }
-                var channelID       = channelInfo.cID;
-                    channel         = channelInfo.on;
+                var channelID = channelInfo.cID;
+                channel       = channelInfo.on;
                 if (
                     channelID !== CMDResposeChannel &&
                     channelID !== ServerMessagesChannel &&
                     channelID !== WiresChannel &&
-                    ( isChatNotif || isChatReconnect)
+                    (isChatNotif || isChatReconnect)
                 ) {
 
-                    channelID       = channelInfo.cID;
+                    channelID = channelInfo.cID;
                 }
                 // console.log("chinfo:");
                 // console.log(channelInfo);
-                if (channelID === CMDResposeChannel){
-                    channel         = "Info Channel";
+                if (channelID === CMDResposeChannel) {
+                    channel = "Info Channel";
                 }
-                var channelColor    = resolveChannelColor(channelID, channelInfo.name);
+                var channelColor = resolveChannelColor(channelID, channelInfo.name);
 
                 if (typeof options.channelsSettings.channelMerger.mapping[channel] !== "undefined") {
-                    var groupName   = options.channelsSettings.channelMerger.mapping[channel];
-                    var groupID     = options.channelsSettings.channelMerger.groups.indexOf(groupName);
-                    channelID       = MergedChannelsGroup + "_MCGID_" + groupsMap[groupName];
-                    channel         = groupName;
-                    channelColor    = randomColor();
+                    var groupName = options.channelsSettings.channelMerger.mapping[channel];
+                    var groupID   = options.channelsSettings.channelMerger.groups.indexOf(groupName);
+                    channelID     = MergedChannelsGroup + "_MCGID_" + groupsMap[groupName];
+                    channel       = groupName;
+                    channelColor  = randomColor();
                 }
                 // console.log("cl",currentChannel, "cID", channelID);
-                if (currentChannel != channelID){
+                if (currentChannel != channelID) {
                     $(e).addClass("hidden");
-                } /*else {
-                    $(e).show();
-                }*/
+                }
+                /*else {
+                                   $(e).show();
+                               }*/
                 $(e).addClass("processed");
                 $(e).addClass("chc_" + channelID);
-                if (typeof channelLog[channelID] === "undefined") {
+                if (!channelLog.hasOwnProperty(channelID)) {
                     createChannelEntry(channel, channelID, channelColor);
                     /*channelLog[channelID] = {
                         channelName: channel,
@@ -1123,21 +1179,27 @@
                         muted: options.channelsSettings.mutedChannels.indexOf(channel) !== -1
                     };*/
                 }
-                if (channelID != currentChannel){
+                if (channelID != currentChannel) {
                     channelLog[channelID].newMessages = true;
                     channelLog[channelID].newMessagesCount++;
                 }
                 channelLog[channelID].messages++;
-                if (options.channelsSettings.mutedChannels.indexOf(channel) !== -1){
+                if (options.channelsSettings.mutedChannels.indexOf(channel) !== -1) {
                     $(e).remove();
                 }
 
                 if (options.scriptSettings.at_username) {
-                    $(e).html($(e).html().replace(/\@([a-zA-Z]+)/g,"@<a class=\"profileLink\">$1</a>"));
+                    $(e).html($(e).html().replace(/\@([a-zA-Z]+)/g, "@<a class=\"profileLink\">$1</a>"));
                 }
 
                 if (options.scriptSettings.join_channel_link) {
-                    $(e).html($(e).html().replace(/\/join\s+([^\s]+)\s*([^\s<]+)?/, "/join <a class=\"joinChannel\">$1</a> <span class=\"jcPWD\">$2</span>"));
+                    $(e)
+                        .html($(e)
+                                  .html()
+                                  .replace(
+                                      /\/join\s+([^\s]+)\s*([^\s<]+)?/,
+                                      "/join <a class=\"joinChannel\">$1</a> <span class=\"jcPWD\">$2</span>"
+                                  ));
                 }
 
                 if (plainText.match(/tabs\s+of\s+avabur/i) !== null) {
@@ -1158,9 +1220,11 @@
     }
 
     function scrollToBottom(selector) {
-        $(selector).animate({
-            scrollTop: $(selector).prop("scrollHeight")
-        });
+        $(selector).animate(
+            {
+                scrollTop: $(selector).prop("scrollHeight")
+            }
+        );
     }
 
     function init() {
@@ -1171,47 +1235,54 @@
         loadMessages();
 
         // TODO: many channels horizontal scroll
-        $("#channelTabList").sortable({items:".channelTab",distance: 5});
+        $("#channelTabList").sortable(
+            {
+                items   : ".channelTab",
+                distance: 5
+            }
+        );
         $("#channelTabList").disableSelection();
-        setTimeout(function(){$("#channelTabList > div:nth-child(2)").click();},5000);
-        checkForUpdateTimer = setTimeout(checkForUpdate,30000);
+        setTimeout(function () {
+            $("#channelTabList > div:nth-child(2)").click();
+        }, 5000);
+        checkForUpdateTimer = setTimeout(checkForUpdate, 30000);
     }
 
 
-    $(document).on("change", ".settingsChanger", function(e){
+    $(document).on("change", ".settingsChanger", function (e) {
         changeSetting(this);
     });
 
     // inspect DOM changes
-    $(document).on('change', 'input[name="data-preference-id-12"]', function(e){
+    $(document).on('change', 'input[name="data-preference-id-12"]', function (e) {
         // e.target.value can be 0 or 1 => 0 - default, 1 - retarded
         options.scriptSettings.chat_direction = parseInt(e.target.value) ? 'down' : 'up';
         saveOptions();
     });
 
     // if the player uses edvordo/RoA-WSHookUp
-    $(document).on('roa-ws:login_info', function(e,d) {
+    $(document).on('roa-ws:login_info', function (e, d) {
         options.scriptSettings.chat_direction = d.p.chatScroll;
         saveOptions();
     });
 
-    $(document).on('roa-ws:page:settings_preferences, roa-ws:page:settings_preferences_change', function(e,d) {
+    $(document).on('roa-ws:page:settings_preferences, roa-ws:page:settings_preferences_change', function (e, d) {
         // 12 is the relevant option ..
         // d.preferences[12] can be 0 or 1 => 0 - default, 1 - retarded
         options.scriptSettings.chat_direction = parseInt(d.preferences[12]) ? 'down' : 'up';
         saveOptions();
     });
 
-    $(document).on("click", ".channelTab", function(e){
+    $(document).on("click", ".channelTab", function (e) {
         $(".channelTab").removeClass("chTabSelected");
-        var channelID = $(this).attr("data-channel");
-        channelLog[channelID].newMessages = false;
+        var channelID                          = $(this).attr("data-channel");
+        channelLog[channelID].newMessages      = false;
         channelLog[channelID].newMessagesCount = 0;
         updateChannelList(channelLog[channelID]);
         // $(".processed").hide();
         $("#chatMessageList > li:not(.hidden)").addClass("hidden");
-        $(".chc_"+channelID).removeClass("hidden");
-        $("#channelTab"+channelID).addClass("chTabSelected");
+        $(".chc_" + channelID).removeClass("hidden");
+        $("#channelTab" + channelID).addClass("chTabSelected");
         $("#channelPreviewWrapper").hide();
         currentChannel = channelID;
         if (channelID.match(/^[0-9]+$/) === null) {
@@ -1222,24 +1293,24 @@
                 }
             }
         }
-        var channelOption = $("#chatChannel option[value="+channelID+"]");
-        if (channelOption.length > 0){
+        var channelOption = $("#chatChannel option[value=" + channelID + "]");
+        if (channelOption.length > 0) {
             $("#chatChannel").val(channelID);
         }
         if (options.scriptSettings.chat_direction === "down") {
-            setTimeout(function(){
+            setTimeout(function () {
                 scrollToBottom("#chatMessageListWrapper");
             }, 500);
         }
     });
 
-    $(document).on("click", "#CPAReset, #chTabCTMenuReset", function(){
+    $(document).on("click", "#CPAReset, #chTabCTMenuReset", function () {
         resetUnreadCount();
     });
 
-    $(document).on("click", "#CPAReset, #chTabCTMenuLast", function(){
+    $(document).on("click", "#CPAReset, #chTabCTMenuLast", function () {
         var channelName = channelLog[hoveringOverTab].channelName;
-        var msg = "/last "+channelName;
+        var msg         = "/last " + channelName;
         if (channelName === "CLAN") {
             msg = "/c /last";
         } else if (options.channelsSettings.channelMerger.groups.indexOf(channelName) !== -1) {
@@ -1255,26 +1326,27 @@
         $("#chatSendMessage").click();
     });
 
-    $(document).on("click", "#CPAPurge, #chTabCTMenuPurge", function(){
+    $(document).on("click", "#CPAPurge, #chTabCTMenuPurge", function () {
         var confirmToo = $(this).attr("id") === "chTabCTMenuPurge";
         purgeChannel(false, confirmToo);
     });
 
-    $(document).on("click", "#CPARemove, #chTabCTMenuRemove", function(){
+    $(document).on("click", "#CPARemove, #chTabCTMenuRemove", function () {
         var confirmToo = $(this).attr("id") === "chTabCTMenuRemove";
         purgeChannel(true, confirmToo);
     });
 
-    $(document).on("click", "#chTabCTMenuLeave", function(){
+    $(document).on("click", "#chTabCTMenuLeave", function () {
         var channelName = channelLog[hoveringOverTab].channelName;
         purgeChannel(true, true);
         $("#chatMessage").text("/leave " + channelName);
         $("#chatSendMessage").click();
     });
 
-    $(document).on("click", "#chTabCTMenuColor", function(){
+    $(document).on("click", "#chTabCTMenuColor", function () {
         if (hoveringOverTab.indexOf(MergedChannelsGroup) !== -1) {
             var color = randomColor();
+
             channelLog[hoveringOverTab].channelColor = color;
             updateChannelList(channelLog[hoveringOverTab]);
         } else {
@@ -1282,8 +1354,8 @@
         }
     });
 
-    $(document).on("click", "#chTabCTMenuMute", function(){
-        if (typeof hoveringOverTab === "undefined"){
+    $(document).on("click", "#chTabCTMenuMute", function () {
+        if (typeof hoveringOverTab === "undefined") {
             return;
         }
         var channel = channelLog[hoveringOverTab].channelName;
@@ -1295,41 +1367,41 @@
         updateChannelList(channelLog[hoveringOverTab]);
     });
 
-    $(document).on("click", "#chTabCTMenuUnMute", function(){
-        if (typeof hoveringOverTab === "undefined"){
+    $(document).on("click", "#chTabCTMenuUnMute", function () {
+        if (typeof hoveringOverTab === "undefined") {
             return;
         }
         var channel = channelLog[hoveringOverTab].channelName;
-        var pos = options.channelsSettings.mutedChannels.indexOf(channel);
+        var pos     = options.channelsSettings.mutedChannels.indexOf(channel);
         if (pos !== -1) {
-            options.channelsSettings.mutedChannels.splice(pos,1);
+            options.channelsSettings.mutedChannels.splice(pos, 1);
             saveOptions();
         }
         channelLog[hoveringOverTab].muted = false;
         updateChannelList(channelLog[hoveringOverTab]);
     });
 
-    $(document).on("mouseover", ".channelTab", function(e){
+    $(document).on("mouseover", ".channelTab", function (e) {
         clearTimeout(hovering);
-        var channelID       = $(this).attr("data-channel");
-        hoveringOverTab     = channelID;
-        if (!options.scriptSettings.preview){
+        var channelID   = $(this).attr("data-channel");
+        hoveringOverTab = channelID;
+        if (!options.scriptSettings.preview) {
             return;
         }
-        var channelName     = channelLog[channelID].channelName;
+        var channelName = channelLog[channelID].channelName;
 
         var channelPreviewWrapper = $("#channelPreviewWrapper");
 
-        var channelTabHolder    = $(this);
+        var channelTabHolder = $(this);
 
-        var cssOptions = {
-            top: ($(this).offset().top + 25)+"px"
+        var cssOptions     = {
+            top: ($(this).offset().top + 25) + "px"
         };
         var previewContent = "There are no new messages in this channel!";
         if (channelLog[channelID].newMessages === true) {
             var previewMessages = [];
-            $(".chc_"+channelID).each(function(i,e){
-                if (i < channelLog[channelID].newMessagesCount){
+            $(".chc_" + channelID).each(function (i, e) {
+                if (i < channelLog[channelID].newMessagesCount) {
                     previewMessages.push($(e).html());
                 }
             });
@@ -1338,45 +1410,47 @@
 
         $("#channelPreviewMessages").html(previewContent);
 
-        if ($(this).offset().left > $(document).width() / 2){
-            cssOptions.left = ($(this).offset().left - channelPreviewWrapper.width() + 50)+"px";
+        if ($(this).offset().left > $(document).width() / 2) {
+            cssOptions.left = ($(this).offset().left - channelPreviewWrapper.width() + 50) + "px";
         } else {
-            cssOptions.left = ($(this).offset().left + 50)+"px";
+            cssOptions.left = ($(this).offset().left + 50) + "px";
         }
         channelPreviewWrapper
             .css(cssOptions)
             .children("h5")
-            .text("'"+channelName+"' preview");
+            .text("'" + channelName + "' preview");
 
-        if (options.scriptSettings.preview_reset){
+        if (options.scriptSettings.preview_reset) {
             $("#CPAReset").show();
         } else {
             $("#CPAReset").hide();
         }
-        if (options.scriptSettings.purge){
+        if (options.scriptSettings.purge) {
             $("#CPAPurge").show();
         } else {
             $("#CPAPurge").hide();
         }
-        if (options.scriptSettings.channel_remove){
+        if (options.scriptSettings.channel_remove) {
             $("#CPARemove").show();
         } else {
             $("#CPARemove").hide();
         }
     });
 
-    $(document).on("mouseover", function(e){
+    $(document).on("mouseover", function (e) {
         clearTimeout(hovering);
         if (typeof hoveringOverTab !== "undefined" && typeof channelLog[hoveringOverTab] !== "undefined") {
 
-            var channelTab              = $("#channelTab" + hoveringOverTab);
-            var channelPreviewWrapper   = $("#channelPreviewWrapper");
-            var shouldShow              = channelLog[hoveringOverTab].newMessages === true;
-            var OpenAndKeep             = $(e.target).closest(channelTab).length || $(e.target).closest(channelPreviewWrapper).length;
-            var delay                   = OpenAndKeep ? 500 : 250;
-            hovering = setTimeout(function(){
+            var channelTab            = $("#channelTab" + hoveringOverTab);
+            var channelPreviewWrapper = $("#channelPreviewWrapper");
+            var shouldShow            = channelLog[hoveringOverTab].newMessages === true;
+            var OpenAndKeep           = $(e.target).closest(channelTab).length || $(e.target)
+                .closest(channelPreviewWrapper).length;
+            var delay                 = OpenAndKeep ? 500 : 250;
+
+            hovering = setTimeout(function () {
                 if (options.scriptSettings.preview && OpenAndKeep && shouldShow) {
-                    channelPreviewWrapper.show(0, function(){
+                    channelPreviewWrapper.show(0, function () {
                         if (options.scriptSettings.chat_direction === "down") {
                             scrollToBottom('#channelPreviewContent');
                         }
@@ -1390,35 +1464,35 @@
         }
     });
 
-    $(document).on("contextmenu", ".channelTab", function(e){
+    $(document).on("contextmenu", ".channelTab", function (e) {
         e.preventDefault();
         var cssOptions = {
-            top: e.pageY+"px"
+            top: e.pageY + "px"
         };
 
-        if ($(this).offset().left > $(document).width() / 2){
-            cssOptions.left = (e.pageX - $(this).width())+"px";
+        if ($(this).offset().left > $(document).width() / 2) {
+            cssOptions.left = (e.pageX - $(this).width()) + "px";
         } else {
-            cssOptions.left = e.pageX+"px";
+            cssOptions.left = e.pageX + "px";
         }
 
-        if (options.scriptSettings.preview_reset){
+        if (options.scriptSettings.preview_reset) {
             $("#chTabCTMenuReset").show();
         } else {
             $("#chTabCTMenuReset").hide();
         }
-        if (options.scriptSettings.purge){
+        if (options.scriptSettings.purge) {
             $("#chTabCTMenuPurge").show();
         } else {
             $("#chTabCTMenuPurge").hide();
         }
-        if (options.scriptSettings.channel_remove){
+        if (options.scriptSettings.channel_remove) {
             $("#chTabCTMenuRemove").show();
         } else {
             $("#chTabCTMenuRemove").hide();
         }
 
-        if (options.channelsSettings.mutedChannels.indexOf(channelLog[hoveringOverTab].channelName) !== -1){
+        if (options.channelsSettings.mutedChannels.indexOf(channelLog[hoveringOverTab].channelName) !== -1) {
             $("#chTabCTMenuUnMute").show();
             $("#chTabCTMenuMute").hide();
         } else {
@@ -1450,7 +1524,7 @@
         return false;
     });
 
-    $(document).on("click", "#ToASettings", function(){
+    $(document).on("click", "#ToASettings", function () {
         $("#modalBackground").show();
         $("#ToASettingsWindow").show();
         loadAllChannels();
@@ -1459,90 +1533,93 @@
          * load muted channel
          */
 
-        var mchw    = $("<span>").addClass("ChMChannelWrapper border2");
-        var mchx    = $("<span>").addClass("ChMMChX ui-element fa fa-times ruby");
+        var mchw = $("<span>").addClass("ChMChannelWrapper border2");
+        var mchx = $("<span>").addClass("ChMMChX ui-element fa fa-times ruby");
 
         $("#ToASChMMutedChannelsHolder").html("");
         $("#ToASChMMergedChannelsHolder").html("");
         $("#ToASChMMergedChannelsGroupsHolder").html("");
         var channelName = "";
         for (var i in options.channelsSettings.mutedChannels) {
-                channelName = options.channelsSettings.mutedChannels[i];
-            var holder      = mchw.clone().append(channelName).appendTo("#ToASChMMutedChannelsHolder");
+            channelName = options.channelsSettings.mutedChannels[i];
+            var holder  = mchw.clone().append(channelName).appendTo("#ToASChMMutedChannelsHolder");
             mchx.clone().attr("data-channel", channelName).prependTo(holder);
         }
         channelName = "";
 
         $("#ToASChMMergedChannelsGroupsHolder").html("");
-        for (var j in options.channelsSettings.channelMerger.groups){
+        for (var j in options.channelsSettings.channelMerger.groups) {
             var mcggn = options.channelsSettings.channelMerger.groups[j];
             addChannelGroup(j, mcggn);
         }
         for (var channelID in channelLog) {
-            if (options.channelsSettings.channelMerger.groups.indexOf(channelLog[channelID].channelName) !== -1)  {
+            if (options.channelsSettings.channelMerger.groups.indexOf(channelLog[channelID].channelName) !== -1) {
                 continue;
             }
-            var channelInfo     = channelLog[channelID];
-                channelName     = channelInfo.channelName;
-            var channelBlob     = mchw.clone().attr("data-channel", channelName).text(channelName);
+            var channelInfo = channelLog[channelID];
+            channelName     = channelInfo.channelName;
+            var channelBlob = mchw.clone().attr("data-channel", channelName).text(channelName);
             if (typeof options.channelsSettings.channelMerger.mapping[channelName] !== "undefined") {
-                var grouppedInto    = options.channelsSettings.channelMerger.mapping[channelName];
-                var mcgGroupID      = options.channelsSettings.channelMerger.groups.indexOf(grouppedInto);
-                    mcgGroupID      = MergedChannelsGroup + "_MCGID_" + groupsMap[grouppedInto];
+                var grouppedInto = options.channelsSettings.channelMerger.mapping[channelName];
+                var mcgGroupID   = options.channelsSettings.channelMerger.groups.indexOf(grouppedInto);
+                mcgGroupID       = MergedChannelsGroup + "_MCGID_" + groupsMap[grouppedInto];
                 if (options.channelsSettings.channelMerger.defaultChannels[grouppedInto] === channelName) {
-                    channelBlob.insertAfter("#"+mcgGroupID+" > input");
+                    channelBlob.insertAfter("#" + mcgGroupID + " > input");
                 } else {
-                    channelBlob.appendTo("#"+mcgGroupID);
+                    channelBlob.appendTo("#" + mcgGroupID);
                 }
             } else {
                 channelBlob.appendTo("#ToASChMMergedChannelsHolder");
             }
         }
         channelName = "";
-        $(".incsort").sortable({
-            items: "span",
-            connectWith: ".incsort",
-            receive: function(i,e) {
-                    channelName = $(e.item[0]).attr("data-channel");
-                var groupName   = $(this).attr("data-group");
-                if (typeof groupName === "undefined") {
-                    delete options.channelsSettings.channelMerger.mapping[channelName];
-                } else {
-                    options.channelsSettings.channelMerger.mapping[channelName] = groupName;
-                }
-                saveOptions();
-            },
-            update: function(i,e){
-                var groupName   = $(this).attr("data-group");
-                if (typeof groupName !== "undefined") {
-                    var channels = $(i.target).children("span");
-                    var channelName = $(channels[0]).attr("data-channel");
-                    options.channelsSettings.channelMerger.defaultChannels[groupName] = channelName;
+        $(".incsort").sortable(
+            {
+                items      : "span",
+                connectWith: ".incsort",
+                receive    : function (i, e) {
+                    channelName   = $(e.item[0]).attr("data-channel");
+                    var groupName = $(this).attr("data-group");
+                    if (typeof groupName === "undefined") {
+                        delete options.channelsSettings.channelMerger.mapping[channelName];
+                    } else {
+                        options.channelsSettings.channelMerger.mapping[channelName] = groupName;
+                    }
                     saveOptions();
-                } // else branch makes no sense :)
+                },
+                update     : function (i, e) {
+                    var groupName = $(this).attr("data-group");
+                    if (typeof groupName !== "undefined") {
+                        var channels    = $(i.target).children("span");
+                        var channelName = $(channels[0]).attr("data-channel");
+
+                        options.channelsSettings.channelMerger.defaultChannels[groupName] = channelName;
+                        saveOptions();
+                    } // else branch makes no sense :)
+                }
             }
-        }).disableSelection();
+        ).disableSelection();
     });
 
-    $(document).on("click", ".ChMMChX", function(){
-        var channel             = $(this).attr("data-channel");
-        var channelID           = resolveChannelID(channel).cID;
-        channelLog[channelID].muted  = false;
+    $(document).on("click", ".ChMMChX", function () {
+        var channel                 = $(this).attr("data-channel");
+        var channelID               = resolveChannelID(channel).cID;
+        channelLog[channelID].muted = false;
         updateChannelList(channelLog[channelID]);
         var pos = options.channelsSettings.mutedChannels.indexOf(channel);
         if (pos !== -1) {
-            options.channelsSettings.mutedChannels.splice(pos,1);
+            options.channelsSettings.mutedChannels.splice(pos, 1);
         }
-        $(this).parent().fadeOut("slow", function(){
+        $(this).parent().fadeOut("slow", function () {
             $(this).remove();
         });
         saveOptions();
     });
 
-    $(document).on("click", ".joinChannel", function(){
+    $(document).on("click", ".joinChannel", function () {
         // trim(",");
-        var chn = $(this).text().replace(/^,+|,+$/gm,"");
-        $("#chatMessage").text("/join "+ chn);
+        var chn = $(this).text().replace(/^,+|,+$/gm, "");
+        $("#chatMessage").text("/join " + chn);
         var pwd = $(this).parent().find(".jcPWD").text();
         $("#chatMessage").append(" " + pwd);
         if (options.scriptSettings.auto_join) {
@@ -1550,7 +1627,7 @@
         }
     });
 
-    $(document).on("click", function(e){
+    $(document).on("click", function (e) {
         $("#channelTabContextMenu").hide();
         var settings = $("#ToASettingsWindow");
         if (
@@ -1569,14 +1646,14 @@
         }
     });
 
-    $(document).on("click", "#ToAScriptOptions, #ToAChannelMerger", function(){
+    $(document).on("click", "#ToAScriptOptions, #ToAChannelMerger", function () {
         var id = $(this).attr("id");
         if (id === "ToAScriptOptions") {
-            $("#ToASettingsChannelMerger").slideUp(function(){
+            $("#ToASettingsChannelMerger").slideUp(function () {
                 $("#ToASettingsScriptSettings").slideDown();
             });
         } else {
-            $("#ToASettingsScriptSettings").slideUp(function(){
+            $("#ToASettingsScriptSettings").slideUp(function () {
                 $("#ToASettingsChannelMerger").slideDown();
             });
         }
@@ -1586,14 +1663,14 @@
     $(document).on("click", "#profileOptionAt", mentionUser);
     $(document).on("click", "#profileOptionNick", nicknameUser);
 
-    $(document).on("keydown", function(e){
+    $(document).on("keydown", function (e) {
         var keys = {
             Q: 81, // [Q]uickscope
             C: 67, // Ni[c]kname
             E: 69 // @m[e]ntion
         };
-        var key = e.which;
-        if ($("#profileOptionTooltip").css("display")==="block") {
+        var key  = e.which;
+        if ($("#profileOptionTooltip").css("display") === "block") {
 
             if (key === keys.Q) {
                 quickScopeUser();
@@ -1609,73 +1686,77 @@
     // on blur ... hmm
     $(document).on("change", ".ToASChMmcgName", updateGroupName);
 
-    $(document).on("click", "#ToASChMAddGroup", function(){
-        $.confirm({
-            "title"     : "New Group Name",
-            "message"   : "<input type=\"text\" id=\"ToASChMNewgroupName\" style=\"width:100%;\">",
-            "buttons"   : {
-                "Create"       : {
-                    "class"     : "green",
-                    "action"    : function() {
-                        var groupName = $("#ToASChMNewgroupName").val();
-                        if (groupName.match(/^\s*$/)){
-                            groupName = randomName(7,13);
+    $(document).on("click", "#ToASChMAddGroup", function () {
+        $.confirm(
+            {
+                "title"  : "New Group Name",
+                "message": "<input type=\"text\" id=\"ToASChMNewgroupName\" style=\"width:100%;\">",
+                "buttons": {
+                    "Create": {
+                        "class" : "green",
+                        "action": function () {
+                            var groupName = $("#ToASChMNewgroupName").val();
+                            if (groupName.match(/^\s*$/)) {
+                                groupName = randomName(7, 13);
+                            }
+                            options.channelsSettings.channelMerger.groups.push(groupName);
+                            groupsMap[groupName] = randomName(3, 5) + "_" + randomInt(5, 9);
+                            $("#ToASettings").click();
                         }
-                        options.channelsSettings.channelMerger.groups.push(groupName);
-                        groupsMap[groupName] = randomName(3,5) + "_" + randomInt(5,9);
-                        $("#ToASettings").click();
-                    }
-                },
-                "Cancel"       : {
-                    "class"     : "red",
-                    "action"    : function() {
+                    },
+                    "Cancel": {
+                        "class" : "red",
+                        "action": function () {
+                        }
                     }
                 }
             }
-        });
+        );
         $("#ToASChMNewgroupName").focus();
     });
 
-    $(document).on("click", ".ToASChMChGRemove", function() {
+    $(document).on("click", ".ToASChMChGRemove", function () {
         var elem = $(this);
-        $.confirm({
-            "title"     : "Group Delete Confirmation",
-            "message"   : "Are you sure you want to remove this channel group?",
-            "buttons"   : {
-                "Yes"       : {
-                    "class"     : "green",
-                    "action"    : function() {
-                        var groupID = elem.attr("data-gnid");
+        $.confirm(
+            {
+                "title"  : "Group Delete Confirmation",
+                "message": "Are you sure you want to remove this channel group?",
+                "buttons": {
+                    "Yes": {
+                        "class" : "green",
+                        "action": function () {
+                            var groupID = elem.attr("data-gnid");
 
-                        var groupName = options.channelsSettings.channelMerger.groups[groupID];
+                            var groupName = options.channelsSettings.channelMerger.groups[groupID];
 
-                        for (var x in options.channelsSettings.channelMerger.mapping) {
-                            if (options.channelsSettings.channelMerger.mapping[x] === groupName) {
-                                delete options.channelsSettings.channelMerger.mapping[x];
+                            for (var x in options.channelsSettings.channelMerger.mapping) {
+                                if (options.channelsSettings.channelMerger.mapping[x] === groupName) {
+                                    delete options.channelsSettings.channelMerger.mapping[x];
+                                }
                             }
+
+                            options.channelsSettings.channelMerger.groups.splice(groupID, 1);
+
+                            var groupChannelID = MergedChannelsGroup + "_MCGID_" + groupsMap[groupName];
+                            $("#channelTab" + groupChannelID).remove();
+                            delete channelLog[groupChannelID];
+                            delete groupsMap[groupName];
+                            delete options.channelsSettings.channelMerger.defaultChannels[groupName];
+                            $("#chatMessageList li").attr("class", "");
+                            saveOptions();
+                            $("#channelTabList > div:nth-child(2)").click();
+                            loadMessages("reload");
+                            $("#ToASettings").click();
                         }
-
-                        options.channelsSettings.channelMerger.groups.splice(groupID, 1);
-
-                        var groupChannelID = MergedChannelsGroup + "_MCGID_" + groupsMap[groupName];
-                        $("#channelTab"+groupChannelID).remove();
-                        delete channelLog[groupChannelID];
-                        delete groupsMap[groupName];
-                        delete options.channelsSettings.channelMerger.defaultChannels[groupName];
-                        $("#chatMessageList li").attr("class", "");
-                        saveOptions();
-                        $("#channelTabList > div:nth-child(2)").click();
-                        loadMessages("reload");
-                        $("#ToASettings").click();
-                    }
-                },
-                "No"       : {
-                    "class"     : "red",
-                    "action"    : function() {
+                    },
+                    "No" : {
+                        "class" : "red",
+                        "action": function () {
+                        }
                     }
                 }
             }
-        });
+        );
     });
 
     init();
