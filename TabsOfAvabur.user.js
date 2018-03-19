@@ -29,15 +29,17 @@
             profile_tooltip_nickname  : true,
             profile_tooltip_mention   : true,
             profile_tooltip_quickscope: true,
-            chat_direction            : 'up'
+            chat_direction            : 'up',
+            persistent_channels       : false
         },
         channelsSettings: {
-            channelMerger: {
+            channelMerger     : {
                 groups         : [],
                 mapping        : {},
                 defaultChannels: {}
             },
-            mutedChannels: []
+            mutedChannels     : [],
+            persistentChannels: []
         },
         version         : "4.2"
     };
@@ -169,7 +171,7 @@
         return color;
     }
 
-    function updateChannelList(channel) {
+    function updateChannelList(channel, withPersistentUpdate = true) {
         var tab = $("#channelTab" + channel.channelID);
         if (tab.length === 0) {
             if (channel.muted) {
@@ -206,6 +208,9 @@
             $("<span>")
                 .addClass("ChBadge fa fa-times border2 ui-element")
                 .appendTo("#channelTab" + channel.channelID);
+        }
+        if (withPersistentUpdate) {
+            savePersistentChannels();
         }
     }
 
@@ -629,6 +634,20 @@
             )
             .appendTo("#ToASettingsScriptSettings");
 
+        // pesist channels between reloads
+        t2w.clone()
+            .append(
+                t2.clone()
+                    .html(
+                        ` Enable persistent channels <span class="fa fa-info-circle ToATooltip" title="Upon refresh all currently present channel tabs will be recreated (without history)." data-toggle="tooltip" data-placement="top" data-html="true"></span>`)
+                    .prepend(
+                        t2a.clone()
+                            .attr("data-setting", "persistent_channels")
+                            .prop("checked", options.scriptSettings.persistent_channels)
+                    )
+            )
+            .appendTo("#ToASettingsScriptSettings");
+
         $("<div>").addClass("clearfix").appendTo("#ToASettingsScriptSettings");
 
         $("<div>")
@@ -819,6 +838,7 @@
                 //delete channelLog[channelID];
                 $("#channelTabMain").click();
                 $("#channelPreviewWrapper").hide();
+                savePersistentChannels();
             }
 
         }
@@ -865,6 +885,9 @@
                 if (typeof parsed.scriptSettings.chat_direction !== "undefined") {
                     options.scriptSettings.chat_direction = parsed.scriptSettings.chat_direction;
                 }
+                if (typeof parsed.scriptSettings.persistent_channels !== "undefined") {
+                    options.scriptSettings.persistent_channels = !!parsed.scriptSettings.persistent_channels;
+                }
             }
             if (typeof parsed.channelsSettings !== "undefined" && typeof parsed.version !== "undefined") {
                 if (typeof parsed.channelsSettings.mutedChannels !== "undefined" && Array.isArray(parsed.channelsSettings.mutedChannels)) {
@@ -887,6 +910,10 @@
                     if (typeof parsed.channelsSettings.channelMerger.defaultChannels !== "undefined" && typeof parsed.channelsSettings.channelMerger.defaultChannels === "object") {
                         options.channelsSettings.channelMerger.defaultChannels = parsed.channelsSettings.channelMerger.defaultChannels;
                     }
+                }
+
+                if (parsed.channelsSettings.hasOwnProperty('persistentChannels')) {
+                    options.channelsSettings.persistentChannels = parsed.channelsSettings.persistentChannels;
                 }
             }
             //$.extend(true, options, parsed || {});
@@ -1227,18 +1254,57 @@
         );
     }
 
+    function savePersistentChannels() {
+        if (!options.scriptSettings.persistent_channels) {
+            options.channelsSettings.persistentChannels = [];
+            saveOptions();
+            return;
+        }
+        let channelsData = [];
+        $('.channelTab').each((i, e) => {
+            let data = $(e).data();
+            if (channelLog.hasOwnProperty(data.channel)) {
+                let channel = channelLog[data.channel];
+                channelsData.push(
+                    {
+                        i: channel.channelID,
+                        n: channel.channelName,
+                        c: channel.channelColor,
+                    }
+                );
+            }
+
+        });
+        options.channelsSettings.persistentChannels = channelsData;
+        saveOptions();
+    }
+
+    function addPersistentChannels() {
+        if (!options.scriptSettings.persistent_channels) {
+            return;
+        }
+
+        for (let channel of options.channelsSettings.persistentChannels) {
+            createChannelEntry(channel.n, channel.i, channel.c, false);
+            console.log(channelLog[channel.i]);
+            updateChannelList(channelLog[channel.i], false);
+        }
+    }
+
     function init() {
         loadOptions();
         loadDependencies();
         prepareHTML();
         addSettingsTab();
+        addPersistentChannels();
         loadMessages();
 
         // TODO: many channels horizontal scroll
         $("#channelTabList").sortable(
             {
                 items   : ".channelTab",
-                distance: 5
+                distance: 5,
+                update  : savePersistentChannels
             }
         );
         $("#channelTabList").disableSelection();
