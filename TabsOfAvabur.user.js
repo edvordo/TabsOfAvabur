@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TabsOfAvabur
 // @namespace    Reltorakii.magic
-// @version      4.2
+// @version      4.2.0-beta
 // @description  Tabs the channels it finds in chat, can be sorted, with notif for new messages
 // @author       Reltorakii
 // @match        https://*.avabur.com/game*
@@ -41,7 +41,7 @@
             mutedChannels     : [],
             persistentChannels: []
         },
-        version         : "4.2"
+        version         : typeof GM_info === "object" ? GM_info.script.version : '4.2.0-beta'
     };
 
     var groupsMap             = {};
@@ -1286,7 +1286,7 @@
 
         for (let channel of options.channelsSettings.persistentChannels) {
             createChannelEntry(channel.n, channel.i, channel.c, false);
-            console.log(channelLog[channel.i]);
+            // console.log(channelLog[channel.i]);
             updateChannelList(channelLog[channel.i], false);
         }
     }
