@@ -506,7 +506,7 @@
         t2w.clone()
             .append(
                 t2.clone()
-                    .text(" Allow removing channel form tabs")
+                    .text(" Allow removing channel from tabs")
                     .prepend(
                         t2a.clone()
                             .attr("data-setting", "channel_remove")
