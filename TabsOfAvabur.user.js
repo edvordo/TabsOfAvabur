@@ -914,6 +914,12 @@
 
                 if (parsed.channelsSettings.hasOwnProperty('persistentChannels')) {
                     options.channelsSettings.persistentChannels = parsed.channelsSettings.persistentChannels;
+                    for (var _channelIndex in options.channelsSettings.persistentChannels) {
+                        var channel = options.channelsSettings.persistentChannels[_channelIndex];
+                        if (groupsMap.hasOwnProperty(channel.n)) {
+                            options.channelsSettings.persistentChannels[_channelIndex].i = groupsMap[channel.n];
+                        }
+                    }
                 }
             }
             //$.extend(true, options, parsed || {});
