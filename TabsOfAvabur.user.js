@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TabsOfAvabur
 // @namespace    Reltorakii.magic
-// @version      4.2.0
+// @version      4.2.1
 // @description  Tabs the channels it finds in chat, can be sorted, with notif for new messages
 // @author       Reltorakii
 // @match        https://*.avabur.com/game*
@@ -41,7 +41,7 @@
             mutedChannels     : [],
             persistentChannels: []
         },
-        version         : typeof GM_info === "object" ? GM_info.script.version : '4.2.0'
+        version         : typeof GM_info === "object" ? GM_info.script.version : '4.2.1'
     };
 
     var groupsMap             = {};
@@ -104,7 +104,7 @@
             return returnCustomID(WiresChannel, true, channel, origChannelName);
         } else if (channel === "Server Messages") {
             return returnCustomID(ServerMessagesChannel, true, channel, origChannelName);
-        } else if (channel.match(/^Level:\s+[0-9]+/)) {
+        } else if (channel.match(/^(Battle|Fishing|Woodcutting|Mining|Stonecutting|Crafting|Carving|Event):\s+[0-9]+/)) {
             return returnCustomID(CMDResposeChannel, true, "", origChannelName);//  info channel changes this later
         }
         var map = {
@@ -1146,7 +1146,7 @@
                     channel = typeof defaultMsg[3] === "undefined" ? "Main" : defaultMsg[3];
                     if (channel !== "Main") {
                         var validate       = $(this).closest("li").find("span:eq(2)").text() === "[";
-                        var quickscopeinfo = channel.match(/^Level:\s+[0-9]+/);
+                        var quickscopeinfo = channel.match(/^(Battle|Fishing|Woodcutting|Mining|Stonecutting|Crafting|Carving|Event):\s+[0-9]+/);
                         if (!validate && quickscopeinfo === null) {
                             channel = "Main";
                         }
