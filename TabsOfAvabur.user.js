@@ -1428,7 +1428,7 @@
         resetUnreadCount();
     });
 
-    $(document).on("click", "#CPAReset, #chTabCTMenuLast", function () {
+    $(document).on("click", "#chTabCTMenuLast", function () {
         var channelName = channelLog[hoveringOverTab].channelName;
         var msg         = "/last " + channelName;
         if (channelName === "CLAN") {
