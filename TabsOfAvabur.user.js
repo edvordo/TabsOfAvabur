@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         TabsOfAvabur
 // @namespace    Reltorakii.magic
-// @version      4.2.1
+// @version      4.3.0-beta
 // @description  Tabs the channels it finds in chat, can be sorted, with notif for new messages
 // @author       Reltorakii
 // @match        https://*.avabur.com/game*
 // @downloadURL  https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js
 // @updateURL    https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js
 // @require      https://cdn.rawgit.com/omichelsen/compare-versions/v3.1.0/index.js
+// @require      https://cdn.rawgit.com/markdown-it/markdown-it/8.4.1/dist/markdown-it.min.js
 // @grant        none
 // ==/UserScript==
 /* jshint -W097 */
@@ -41,7 +42,7 @@
             mutedChannels     : [],
             persistentChannels: []
         },
-        version         : typeof GM_info === "object" ? GM_info.script.version : '4.2.1'
+        version         : typeof GM_info === "object" ? GM_info.script.version : '4.3.0-beta'
     };
 
     var groupsMap             = {};
@@ -64,6 +65,7 @@
 
     var showingReconnectMsg = false;
     var internalUpdateUrl   = "https://api.github.com/repos/edvordo/TabsOfAvabur/contents/TabsOfAvabur.user.js";
+    let internalReleasesUrl = 'https://api.github.com/repos/edvordo/TabsOfAvabur/releases';
 
     var hovering;
     var hoveringOverTab;
@@ -290,6 +292,23 @@
         }
     }
 
+    function populateChangelog() {
+        let container = $('#ToASettingsChangelog');
+        container.html('');
+        $.get(internalReleasesUrl).then((releases) => {
+            for (let release of releases) {
+                // release.name, release.body, new Date(release.published_at), release.html_url;
+                container.append(`<div>
+    <h5>
+        ${release.name}<br>
+        <small>${(new Date(release.published_at)).toLocaleString()}</small>
+    </h5>
+    ${markdownit().render(release.body)}
+</div>`);
+            }
+        });
+    }
+
     function prepareHTML() {
         $("<div>")
             .attr("id", "channelTabListWrapper")
@@ -452,27 +471,44 @@
 
         $("<div>")
             .attr("id", "ToASWMenu")
+            .data('active', null)
             .appendTo("#ToASettingsWindow");
 
-        var t = $("<div>")
-            .addClass("col-sm-6 text-center");
+        var tm = $("<div>")
+            .addClass("col-sm-3 text-center");
 
-        var l = t.clone().appendTo("#ToASWMenu");
-        var r = t.clone().appendTo("#ToASWMenu");
+        var tm1 = tm.clone().appendTo("#ToASWMenu");
+        var tm2 = tm.clone().appendTo("#ToASWMenu");
+        var tm3 = tm.clone().appendTo("#ToASWMenu");
+        var tm4 = tm.clone().appendTo("#ToASWMenu");
 
         $("<button>")
-            .attr("type", "button")
-            .attr("id", "ToAScriptOptions")
+            .attr({type: "button", id: "ToAScriptOptions"})
+            .data('target', '#ToASettingsScriptSettings')
             .addClass("btn btn-primary btn-block")
             .text("Script options")
-            .appendTo(l);
+            .appendTo(tm1);
 
         $("<button>")
-            .attr("type", "button")
-            .attr("id", "ToAChannelMerger")
+            .attr({type: "button", id: "ToAChannelMerger"})
+            .data('target', '#ToASettingsChannelMerger')
             .addClass("btn btn-primary btn-block")
             .text("Channel Manager")
-            .appendTo(r);
+            .appendTo(tm2);
+
+        $("<button>")
+            .attr({type: "button", id: "ToAChannelHistory"})
+            .data('target', '#ToASettingsChannelHistory')
+            .addClass("btn btn-primary btn-block")
+            .text("Channels History")
+            .appendTo(tm3);
+
+        $("<button>")
+            .attr({type: "button", id: "ToAChangelog"})
+            .data('target', '#ToASettingsChangelog')
+            .addClass("btn btn-primary btn-block")
+            .text("Changelog")
+            .appendTo(tm4);
 
         $("<div>").addClass("clearfix").appendTo("#ToASettingsWindow");
 
@@ -487,7 +523,7 @@
         var st  = $("<h6>").addClass("text-center");
         var t2  = $("<label>");
         var t2a = $("<input>").attr({"type": "checkbox"}).addClass("settingsChanger");
-        var t2w = t.clone().removeClass("text-center");
+        var t2w = $("<div>").addClass("col-sm-6");
 
         st.clone().text("Script settings").appendTo("#ToASettingsScriptSettings");
         // purge channel
@@ -710,6 +746,15 @@
             .addClass("fa fa-times border2 ui-element")
             .appendTo("#ToASettingsWindow");
 
+
+        $("<div>")
+            .attr("id", "ToASettingsChannelHistory")
+            .appendTo("#ToASettingsWindowContent");
+
+        $("<div>")
+            .attr("id", "ToASettingsChangelog")
+            .appendTo("#ToASettingsWindowContent");
+
         /**
          * profile tooltip extras
          */
@@ -752,6 +797,8 @@
         $("#ToASettingsWindow").hide();
         $("#ToASettingsScriptSettings").hide();
         $("#ToASettingsChannelMerger").hide();
+        $("#ToASettingsChannelHistory").hide();
+        $("#ToASettingsChangelog").hide();
         $("#ToASettingsSaved").hide();
         $(".ToATooltip").tooltip();
         $("#ToASettingsWindow").draggable({handle: "h5"});
@@ -898,7 +945,7 @@
                         for (var ccg in parsed.channelsSettings.channelMerger.groups) {
                             var groupName = parsed.channelsSettings.channelMerger.groups[ccg];
                             if (typeof groupName === "string" && options.channelsSettings.channelMerger.groups.indexOf(
-                                    groupName) === -1) {
+                                groupName) === -1) {
                                 options.channelsSettings.channelMerger.groups.push(groupName);
                                 groupsMap[groupName] = randomName(3, 5) + "_" + randomInt(5, 9);
                             }
@@ -1304,6 +1351,7 @@
         addSettingsTab();
         addPersistentChannels();
         loadMessages();
+        populateChangelog();
 
         // TODO: many channels horizontal scroll
         $("#channelTabList").sortable(
@@ -1317,7 +1365,7 @@
         setTimeout(function () {
             $("#channelTabList > div:nth-child(2)").click();
         }, 5000);
-        checkForUpdateTimer = setTimeout(checkForUpdate, 30000);
+        checkForUpdateTimer = setTimeout(checkForUpdate, 10000);
     }
 
 
@@ -1712,23 +1760,25 @@
             settings.hide();
             $("#ToASettingsChannelMerger").hide();
             $("#ToASettingsScriptSettings").hide();
+            $("#ToASettingsChannelHistory").hide();
+            $("#ToASettingsChangelog").hide();
             if ($(e.target).closest("#ToASettingsWindowClose").length) {
                 $("#modalBackground").fadeOut();
             }
         }
     });
 
-    $(document).on("click", "#ToAScriptOptions, #ToAChannelMerger", function () {
-        var id = $(this).attr("id");
-        if (id === "ToAScriptOptions") {
-            $("#ToASettingsChannelMerger").slideUp(function () {
-                $("#ToASettingsScriptSettings").slideDown();
-            });
+    $(document).on("click", "#ToASWMenu button", function () {
+        let target = $(this).data('target');
+        let active = $('#ToASWMenu').data('active');
+        if (active === null) {
+            $(target).slideDown();
         } else {
-            $("#ToASettingsScriptSettings").slideUp(function () {
-                $("#ToASettingsChannelMerger").slideDown();
+            $(active).slideUp(function() {
+                $(target).slideDown();
             });
         }
+        $('#ToASWMenu').data('active', target);
     });
 
     $(document).on("click", "#profileOptionQuickScope", quickScopeUser);
