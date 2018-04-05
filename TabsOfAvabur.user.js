@@ -9,6 +9,7 @@
 // @updateURL    https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js
 // @require      https://cdn.rawgit.com/omichelsen/compare-versions/v3.1.0/index.js
 // @require      https://cdn.rawgit.com/markdown-it/markdown-it/8.4.1/dist/markdown-it.min.js
+// @require      https://cdn.rawgit.com/markdown-it/markdown-it-emoji/1.4.0/dist/markdown-it-emoji.min.js
 // @grant        none
 // ==/UserScript==
 /* jshint -W097 */
@@ -303,7 +304,7 @@
         ${release.name}<br>
         <small>${(new Date(release.published_at)).toLocaleString()}</small>
     </h5>
-    ${markdownit().render(release.body)}
+    ${markdownit().use(markdownitEmoji).render(release.body)}
 </div>`);
             }
         });
@@ -464,10 +465,10 @@
             .addClass("border2 ui-element")
             .appendTo("body");
 
-        let author = $('<a>').attr({href:'javascript:void(0)',id:'ToAAuthor'}).text('@Reltorakii');
+        let author = $('<a>').attr({href:'javascript:void(0)',id:'ToAAuthor'}).text('@Reltorakii').outerHTML();
         $("<h5>")
             .css("text-align", "center")
-            .append(`TabsOfAvabur v${options.version} by ${author.outerHTML()} - Settings`)
+            .append(`TabsOfAvabur v${options.version} by ${author} - Settings`)
             .appendTo("#ToASettingsWindow");
 
         $("<div>")
