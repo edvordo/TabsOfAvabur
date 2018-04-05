@@ -293,7 +293,7 @@
     }
 
     function populateChangelog() {
-        let container = $('#ToASettingsChangelog');
+        let container = $('#ToASettingsChangelog > #ToACLLog');
         container.html('');
         $.get(internalReleasesUrl).then((releases) => {
             for (let release of releases) {
@@ -464,9 +464,10 @@
             .addClass("border2 ui-element")
             .appendTo("body");
 
+        let author = $('<a>').attr({href:'javascript:void(0)',id:'ToAAuthor'}).text('@Reltorakii');
         $("<h5>")
             .css("text-align", "center")
-            .text("TabsOfAvabur v" + options.version + " - Settings")
+            .append(`TabsOfAvabur v${options.version} by ${author.outerHTML()} - Settings`)
             .appendTo("#ToASettingsWindow");
 
         $("<div>")
@@ -728,6 +729,24 @@
             .attr("id", "ToASChMAddGroup")
             .insertAfter(chgl);
 
+        // channel history related stuff
+        $("<div>")
+            .attr("id", "ToASettingsChannelHistory")
+            .appendTo("#ToASettingsWindowContent");
+
+        // changelog
+        $("<div>")
+            .attr("id", "ToASettingsChangelog")
+            .appendTo("#ToASettingsWindowContent");
+
+        $('<a>')
+            .addClass('btn btn-primary')
+            .attr({href: 'https://www.github.com/edvordo/TabsOfAvabur'})
+
+        $('<div>')
+            .attr('id', 'ToACLLog')
+            .appendTo('#ToASettingsChangelog');
+
         // clearfix channel merger
         $("<div>").addClass("clearfix").appendTo("#ToASettingsChannelMerger");
 
@@ -745,15 +764,6 @@
             .attr("id", "ToASettingsWindowClose")
             .addClass("fa fa-times border2 ui-element")
             .appendTo("#ToASettingsWindow");
-
-
-        $("<div>")
-            .attr("id", "ToASettingsChannelHistory")
-            .appendTo("#ToASettingsWindowContent");
-
-        $("<div>")
-            .attr("id", "ToASettingsChangelog")
-            .appendTo("#ToASettingsWindowContent");
 
         /**
          * profile tooltip extras
@@ -1134,7 +1144,8 @@
             version   = match[1];
 
             if (compareVersions(options.version, version) < 0) {
-                var message = "<li class=\"chat_notification\">TabsOfAvabur has been updated to version " + version + "! <a href=\"https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js\" target=\"_blank\">Update</a> | <a href=\"https://github.com/edvordo/TabsOfAvabur/releases\" target=\"_blank\">Changelog</a></li>";
+                populateChangelog();
+                let message = `<li class="chat_notification">TabsOfAvabur has been updated to version ${version}! <a href="https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js" target="_blank">Update</a> | <a href="javascript:void(0);" id="ToAUpdateShowChangelog">Changelog</a></li>`;
                 if (options.scriptSettings.chat_direction === "up") {
                     $("#chatMessageList").prepend(message);
                 } else {
@@ -1879,6 +1890,20 @@
                 }
             }
         );
+    });
+
+    $(document).on('click', '#ToAUpdateShowChangelog', function(e){
+        $('#ToASettings').click();
+        setTimeout(function(){
+            $('#ToAChangelog').click();
+        }, 500);
+        e.preventDefault();
+        return false;
+    });
+
+    $(document).on('click', '#ToAAuthor', function(){
+        $('#chatMessage').html('/profile Reltorakii');
+        $('#chatSendMessage').click();
     });
 
     init();
