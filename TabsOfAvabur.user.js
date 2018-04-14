@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TabsOfAvabur
 // @namespace    Reltorakii.magic
-// @version      4.3.0-beta
+// @version      4.3.0-beta1
 // @description  Tabs the channels it finds in chat, can be sorted, with notif for new messages
 // @author       Reltorakii
 // @match        https://*.avabur.com/game*
@@ -11,6 +11,7 @@
 // @require      https://cdn.rawgit.com/markdown-it/markdown-it/8.4.1/dist/markdown-it.min.js
 // @require      https://cdn.rawgit.com/markdown-it/markdown-it-emoji/1.4.0/dist/markdown-it-emoji.min.js
 // @grant        none
+// @run-at       document-idle
 // ==/UserScript==
 /* jshint -W097 */
 /* jshint -W043 */
@@ -43,7 +44,7 @@
             mutedChannels     : [],
             persistentChannels: []
         },
-        version         : typeof GM_info === "object" ? GM_info.script.version : '4.3.0-beta'
+        version         : typeof GM_info === "object" ? GM_info.script.version : '4.3.0-beta1'
     };
 
     var groupsMap             = {};
@@ -72,6 +73,27 @@
     var hoveringOverTab;
 
     var checkForUpdateTimer = 0;
+
+    function log(message) {
+        console.log(`[${(new Date).toLocaleTimeString()}] [Tabs of Avabur (v${options.version})] ${message}`);
+    }
+
+    function ChannelHistory() {
+        let messages = {};
+
+        function __addMessage(message) {
+            let keys = Object.keys(messages);
+            if (keys.length > 100) {
+                let first = keys.shift();
+                delete messages[first];
+            }
+            messages[Date.now()] = message;
+        }
+
+        return {
+            addMessage: __addMessage
+        };
+    }
 
     function returnCustomID(channel, resolved, cname, on) {
         var obj = {
@@ -218,6 +240,7 @@
     }
 
     function addSettingsTab() {
+        log('Adding settings tab');
         $("<div>")
             .attr("id", "ToASettings")
             .addClass("border2 ui-element ToASettings")
@@ -270,12 +293,13 @@
     }
 
     function loadDependencies() {
+        log('Adding dependencies');
         //<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
         $("<link>")
             .attr(
                 {
                     rel : "stylesheet",
-                    href: "//maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css"
+                    href: "//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
                 }
             )
             .appendTo("head");
@@ -294,6 +318,7 @@
     }
 
     function populateChangelog() {
+        log('Pulling script repo tags');
         let container = $('#ToASettingsChangelog > #ToACLLog');
         container.html('');
         $.get(internalReleasesUrl).then((releases) => {
@@ -311,6 +336,7 @@
     }
 
     function prepareHTML() {
+        log('Setting-up HTML');
         $("<div>")
             .attr("id", "channelTabListWrapper")
             .insertBefore("#chatMessageListWrapper");
@@ -334,6 +360,12 @@
         $("<div>")
             .attr("id", "channelPreviewActions")
             .appendTo("#channelPreviewWrapper");
+
+        $("<span>")
+            .addClass("border2 ui-element fa fa-history materials cpa")
+            .attr("id", "CPAHistory")
+            .attr("title", "View history")
+            .appendTo("#channelPreviewActions");
 
         $("<span>")
             .addClass("border2 ui-element fa fa-check sapphire cpa")
@@ -903,47 +935,49 @@
     }
 
     function loadOptions() {
+        log('Loading  options');
         var stored = localStorage.getItem("ToAOPTS");
+        log(stored);
         try {
             var parsed = JSON.parse(stored);
-            if (typeof parsed.scriptSettings !== "undefined") {
-                if (typeof parsed.scriptSettings.purge !== "undefined") {
+            if (typeof parsed.hasOwnProperty('scriptSettings')) {
+                if (typeof parsed.scriptSettings.hasOwnProperty('purge')) {
                     options.scriptSettings.purge = !!parsed.scriptSettings.purge;
                 }
-                if (typeof parsed.scriptSettings.channel_remove !== "undefined") {
+                if (typeof parsed.scriptSettings.hasOwnProperty('channel_remove')) {
                     options.scriptSettings.channel_remove = !!parsed.scriptSettings.channel_remove;
                 }
-                if (typeof parsed.scriptSettings.preview !== "undefined") {
+                if (typeof parsed.scriptSettings.hasOwnProperty('preview')) {
                     options.scriptSettings.preview = !!parsed.scriptSettings.preview;
                 }
-                if (typeof parsed.scriptSettings.preview_reset !== "undefined") {
+                if (typeof parsed.scriptSettings.hasOwnProperty('preview_reset')) {
                     options.scriptSettings.preview_reset = !!parsed.scriptSettings.preview_reset;
                 }
-                if (typeof parsed.scriptSettings.group_wires !== "undefined") {
+                if (typeof parsed.scriptSettings.hasOwnProperty('group_wires')) {
                     options.scriptSettings.group_wires = !!parsed.scriptSettings.group_wires;
                 }
-                if (typeof parsed.scriptSettings.at_username !== "undefined") {
+                if (typeof parsed.scriptSettings.hasOwnProperty('at_username')) {
                     options.scriptSettings.at_username = !!parsed.scriptSettings.at_username;
                 }
-                if (typeof parsed.scriptSettings.join_channel_link !== "undefined") {
+                if (typeof parsed.scriptSettings.hasOwnProperty('join_channel_link')) {
                     options.scriptSettings.join_channel_link = !!parsed.scriptSettings.join_channel_link;
                 }
-                if (typeof parsed.scriptSettings.auto_join !== "undefined") {
+                if (typeof parsed.scriptSettings.hasOwnProperty('auto_join')) {
                     options.scriptSettings.auto_join = !!parsed.scriptSettings.auto_join;
                 }
-                if (typeof parsed.scriptSettings.profile_tooltip_nickname !== "undefined") {
+                if (typeof parsed.scriptSettings.hasOwnProperty('profile_tooltip_nickname')) {
                     options.scriptSettings.profile_tooltip_nickname = !!parsed.scriptSettings.profile_tooltip_nickname;
                 }
-                if (typeof parsed.scriptSettings.profile_tooltip_mention !== "undefined") {
+                if (typeof parsed.scriptSettings.hasOwnProperty('profile_tooltip_mention')) {
                     options.scriptSettings.profile_tooltip_mention = !!parsed.scriptSettings.profile_tooltip_mention;
                 }
-                if (typeof parsed.scriptSettings.profile_tooltip_quickscope !== "undefined") {
+                if (typeof parsed.scriptSettings.hasOwnProperty('profile_tooltip_quickscope')) {
                     options.scriptSettings.profile_tooltip_quickscope = !!parsed.scriptSettings.profile_tooltip_quickscope;
                 }
-                if (typeof parsed.scriptSettings.chat_direction !== "undefined") {
+                if (typeof parsed.scriptSettings.hasOwnProperty('chat_direction')) {
                     options.scriptSettings.chat_direction = parsed.scriptSettings.chat_direction;
                 }
-                if (typeof parsed.scriptSettings.persistent_channels !== "undefined") {
+                if (typeof parsed.scriptSettings.hasOwnProperty('persistent_channels')) {
                     options.scriptSettings.persistent_channels = !!parsed.scriptSettings.persistent_channels;
                 }
             }
@@ -983,8 +1017,10 @@
             //$.extend(true, options, parsed || {});
             saveOptions();
         } catch (e) {
+            log(`Failed to load settings!`);
+            console.log(e);
             localStorage.removeItem("ToAOPTS");
-            // console.log(e);
+
         }
     }
 
@@ -996,7 +1032,8 @@
             messages        : 0,
             newMessages     : false,
             newMessagesCount: 0,
-            muted           : options.channelsSettings.mutedChannels.indexOf(newChannel) !== -1
+            muted           : options.channelsSettings.mutedChannels.indexOf(newChannel) !== -1,
+            messageHistory  : new ChannelHistory()
         };
     }
 
@@ -1170,11 +1207,9 @@
                 // default message format [11:11:11] [Channel] (optional) the rest of the message
                 var defaultMsg  = plainText.match(/^\[([^\]]+)\]\s*(\[([^\]]+)\])?\s*(.*)/);
                 // clan MoTD: [11 Nov, 1111] Clan Message of the Day:
-                var isClanMoTD  = plainText.replace(/^\[[0-9]+\s+[a-zA-Z]+\,\s*[0-9]+\]\s*/, "")
-                    .indexOf("Clan Message of the Day:") === 0;
+                var isClanMoTD  = plainText.replace(/^\[[0-9]+\s+[a-zA-Z]+\,\s*[0-9]+\]\s*/, "").indexOf("Clan Message of the Day:") === 0;
                 // clan MoTD: [11 Nov, 1111] Message of the Day:
-                var isRoAMoTD   = plainText.replace(/^\[[0-9]+\s+[a-zA-Z]+\,\s*[0-9]+\]\s*/, "")
-                    .indexOf("Message of the Day:") === 0;
+                var isRoAMoTD   = plainText.replace(/^\[[0-9]+\s+[a-zA-Z]+\,\s*[0-9]+\]\s*/, "").indexOf("Message of the Day:") === 0;
                 // Staff Server Messages [11:11:11] [ Whatever the hell. ]
                 var isServerMsg = plainText.match(/^\[[^\]]+\]\s*\[\s+.*\s+]$/);
                 // whisper detection
@@ -1184,8 +1219,7 @@
                 var isWire      = plainText.match(/^\[[^\]]+\]\s*(You|[a-zA-Z]+)\s*wired\s*.*\s*(you|[a-zA-Z]+)\.$/);
                 // [11:11:11] Username sent a whatever to you.
 
-                var isChatNotif     = $(e).children(".chat_notification").length > 0 || $(e)
-                    .hasClass("chat_notification");
+                var isChatNotif     = $(e).children(".chat_notification").length > 0 || $(e).hasClass("chat_notification");
                 var isChatReconnect = $(e).attr("id") === "websocket_reconnect_line";
 
                 var channel = "";
@@ -1261,15 +1295,6 @@
                 $(e).addClass("chc_" + channelID);
                 if (!channelLog.hasOwnProperty(channelID)) {
                     createChannelEntry(channel, channelID, channelColor);
-                    /*channelLog[channelID] = {
-                        channelName: channel,
-                        channelID: channelID,
-                        channelColor: channelColor,
-                        messages: 0,
-                        newMessages: false,
-                        newMessagesCount: 0,
-                        muted: options.channelsSettings.mutedChannels.indexOf(channel) !== -1
-                    };*/
                 }
                 if (channelID != currentChannel) {
                     channelLog[channelID].newMessages = true;
@@ -1279,19 +1304,23 @@
                 if (options.channelsSettings.mutedChannels.indexOf(channel) !== -1) {
                     $(e).remove();
                 }
+                if (channelID != currentChannel) {
+
+                }
 
                 if (options.scriptSettings.at_username) {
                     $(e).html($(e).html().replace(/\@([a-zA-Z]+)/g, "@<a class=\"profileLink\">$1</a>"));
                 }
 
                 if (options.scriptSettings.join_channel_link) {
-                    $(e)
-                        .html($(e)
-                                  .html()
-                                  .replace(
-                                      /\/join\s+([^\s]+)\s*([^\s<]+)?/,
-                                      "/join <a class=\"joinChannel\">$1</a> <span class=\"jcPWD\">$2</span>"
-                                  ));
+                    $(e).html(
+                        $(e)
+                            .html()
+                            .replace(
+                                /\/join\s+([^\s]+)\s*([^\s<]+)?/,
+                                `/join <a class="joinChannel">$1</a> <span class="jcPWD">$2</span>`
+                            )
+                    );
                 }
 
                 if (plainText.match(/tabs\s+of\s+avabur/i) !== null) {
@@ -1345,6 +1374,7 @@
     }
 
     function addPersistentChannels() {
+        log('Creating persistent channels tabs');
         if (!options.scriptSettings.persistent_channels) {
             return;
         }
@@ -1362,6 +1392,7 @@
         prepareHTML();
         addSettingsTab();
         addPersistentChannels();
+        log('Starting chat monitor loop');
         loadMessages();
         populateChangelog();
 
@@ -1394,6 +1425,7 @@
 
     // if the player uses edvordo/RoA-WSHookUp
     $(document).on('roa-ws:login_info', function (e, d) {
+        log('hue?');
         options.scriptSettings.chat_direction = d.p.chatScroll;
         saveOptions();
     });
@@ -1440,7 +1472,7 @@
         resetUnreadCount();
     });
 
-    $(document).on("click", "#chTabCTMenuLast", function () {
+    $(document).on("click", "#CPAHistory, #chTabCTMenuLast", function () {
         var channelName = channelLog[hoveringOverTab].channelName;
         var msg         = "/last " + channelName;
         if (channelName === "CLAN") {
