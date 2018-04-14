@@ -33,7 +33,8 @@
             profile_tooltip_mention   : true,
             profile_tooltip_quickscope: true,
             chat_direction            : 'up',
-            persistent_channels       : false
+            persistent_channels       : false,
+            prepend_with_hashtag      : true
         },
         channelsSettings: {
             channelMerger     : {
@@ -196,8 +197,17 @@
         return color;
     }
 
+    function updateAllChannelTabs() {
+        $("#channelTabList").find(".channelTab").each(function(i,e){
+            let channel = $(this).data("channel");
+            if (channel) {
+                updateChannelList(channelLog[channel]);
+            }
+        });
+    }
+
     function updateChannelList(channel, withPersistentUpdate = true) {
-        var tab = $("#channelTab" + channel.channelID);
+        let tab = $("#channelTab" + channel.channelID);
         if (tab.length === 0) {
             if (channel.muted) {
                 return;
@@ -214,7 +224,10 @@
                 .appendTo("#channelTabList");
             tab = $("#channelTab" + channel.channelID);
         }
-        var channelTabLabel = "#" + channel.channelName;
+        let channelTabLabel = channel.channelName;
+        if (true === options.scriptSettings.prepend_with_hashtag) {
+            channelTabLabel = '#' + channelTabLabel;
+        }
         tab.text(channelTabLabel).css({color: channel.channelColor});
         if (channel.newMessages && !channel.muted) {
 
@@ -718,6 +731,19 @@
             )
             .appendTo("#ToASettingsScriptSettings");
 
+        // prepend the number sign to channel tab name
+        t2w.clone()
+            .append(
+                t2.clone()
+                    .html(` Prepend # to channel tab names`)
+                    .prepend(
+                        t2a.clone()
+                            .attr("data-setting", "prepend_with_hashtag")
+                            .prop("checked", options.scriptSettings.prepend_with_hashtag)
+                    )
+            )
+            .appendTo("#ToASettingsScriptSettings");
+
         $("<div>").addClass("clearfix").appendTo("#ToASettingsScriptSettings");
 
         $("<div>")
@@ -902,6 +928,9 @@
             var POOption = ucfirst(match[1]);
             $(".ToAPO" + POOption).toggleClass("hidden");
         }
+        if (setting === 'prepend_with_hashtag') {
+            updateAllChannelTabs();
+        }
         saveOptions();
     }
 
@@ -936,7 +965,7 @@
 
     function loadOptions() {
         log('Loading  options');
-        var stored = localStorage.getItem("ToAOPTS");
+        let stored = localStorage.getItem("ToAOPTS");
         try {
             var parsed = JSON.parse(stored);
             if (typeof parsed.hasOwnProperty('scriptSettings')) {
@@ -979,6 +1008,9 @@
                 if (typeof parsed.scriptSettings.hasOwnProperty('persistent_channels')) {
                     options.scriptSettings.persistent_channels = !!parsed.scriptSettings.persistent_channels;
                 }
+                if (typeof parsed.scriptSettings.hasOwnProperty('prepend_with_hashtag')) {
+                    options.scriptSettings.prepend_with_hashtag = !!parsed.scriptSettings.prepend_with_hashtag;
+                }
             }
             if (typeof parsed.channelsSettings !== "undefined" && typeof parsed.version !== "undefined") {
                 if (typeof parsed.channelsSettings.mutedChannels !== "undefined" && Array.isArray(parsed.channelsSettings.mutedChannels)) {
@@ -986,10 +1018,9 @@
                 }
                 if (typeof parsed.channelsSettings.channelMerger !== "undefined") {
                     if (typeof parsed.channelsSettings.channelMerger.groups !== "undefined" && Array.isArray(parsed.channelsSettings.channelMerger.groups)) {
-                        for (var ccg in parsed.channelsSettings.channelMerger.groups) {
-                            var groupName = parsed.channelsSettings.channelMerger.groups[ccg];
-                            if (typeof groupName === "string" && options.channelsSettings.channelMerger.groups.indexOf(
-                                groupName) === -1) {
+                        for (let ccg in parsed.channelsSettings.channelMerger.groups) {
+                            let groupName = parsed.channelsSettings.channelMerger.groups[ccg];
+                            if (typeof groupName === "string" && options.channelsSettings.channelMerger.groups.indexOf(groupName) === -1) {
                                 options.channelsSettings.channelMerger.groups.push(groupName);
                                 groupsMap[groupName] = randomName(3, 5) + "_" + randomInt(5, 9);
                             }
