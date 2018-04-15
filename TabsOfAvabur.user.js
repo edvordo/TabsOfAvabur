@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TabsOfAvabur
 // @namespace    Reltorakii.magic
-// @version      4.3.0-rc1
+// @version      4.3.0-rc2
 // @description  Tabs the channels it finds in chat, can be sorted, with notif for new messages
 // @author       Reltorakii
 // @match        https://*.avabur.com/game*
@@ -46,7 +46,7 @@
             mutedChannels     : [],
             persistentChannels: []
         },
-        version         : typeof GM_info === "object" ? GM_info.script.version : '4.3.0-rc1'
+        version         : typeof GM_info === "object" ? GM_info.script.version : '4.3.0-rc2'
     };
 
     let groupsMap             = {};
@@ -355,6 +355,22 @@
                 .attr(
                     {
                         src     : 'https://cdn.rawgit.com/omichelsen/compare-versions/v3.1.0/index.js',
+                        language: 'application/javascript'
+                    }
+                )
+                .appendTo('head');
+            $('<script>')
+                .attr(
+                    {
+                        src     : 'https://cdn.rawgit.com/markdown-it/markdown-it/8.4.1/dist/markdown-it.min.js',
+                        language: 'application/javascript'
+                    }
+                )
+                .appendTo('head');
+            $('<script>')
+                .attr(
+                    {
+                        src     : 'https://cdn.rawgit.com/markdown-it/markdown-it-emoji/1.4.0/dist/markdown-it-emoji.min.js',
                         language: 'application/javascript'
                     }
                 )
@@ -2016,5 +2032,9 @@
         checkForUpdateTimer = setTimeout(checkForUpdate, 10000);
     }
 
-    window.addEventListener('load', init, {once: true});
+    if (typeof GM_info !== 'object') {
+        init();
+    } else {
+        window.addEventListener('load', init, {once: true});
+    }
 }(jQuery));
