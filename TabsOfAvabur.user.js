@@ -241,8 +241,10 @@
                 return;
             }
             $("<div>")
-                .attr("id", "channelTab" + channel.channelID)
-                .attr("data-channel", channel.channelID)
+                .attr({
+                    id: `channelTab${channel.channelID}`,
+                    "data-channel": channel.channelID
+                })
                 .addClass("border2 ui-element channelTab")
                 .css(
                     {
@@ -1655,7 +1657,8 @@
 
                 let channelTab            = $("#channelTab" + hoveringOverTab);
                 let channelPreviewWrapper = $("#channelPreviewWrapper");
-                let shouldShow            = channelLog[hoveringOverTab].newMessages === true;
+                // let shouldShow            = channelLog[hoveringOverTab].newMessages === true;
+                let shouldShow            = true;
                 let OpenAndKeep           = $(e.target).closest(channelTab).length || $(e.target).closest(channelPreviewWrapper).length;
                 let delay                 = OpenAndKeep ? 500 : 250;
 
