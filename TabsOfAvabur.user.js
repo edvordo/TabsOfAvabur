@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TabsOfAvabur
 // @namespace    Reltorakii.magic
-// @version      4.3.0-rc2
+// @version      4.3.0-rc3
 // @description  Tabs the channels it finds in chat, can be sorted, with notif for new messages
 // @author       Reltorakii
 // @match        https://*.avabur.com/game*
@@ -46,7 +46,7 @@
             mutedChannels     : [],
             persistentChannels: []
         },
-        version         : typeof GM_info === "object" ? GM_info.script.version : '4.3.0-rc2'
+        version         : typeof GM_info === "object" ? GM_info.script.version : '4.3.0-rc3'
     };
 
     let groupsMap             = {};
@@ -965,6 +965,7 @@
 .incsort{border-radius: 0 !important; margin: 3px 1px; padding: 2px;}
 .chTabSelected {background: var(--nav-background-color);background-image: linear-gradient(to bottom,var(--nav-gradient-first-color) 0,var(--nav-gradient-second-color) 100%)}
 #ToASChMMergedChannelsGroupsHolder > .incsort > span:nth-of-type(1) {border-left-width: 7px !important;}
+#ToACLLog {max-height: 300px; overflow: auto;}
 @media screen and (max-width:768px){#ToASettingsWindow{left:5%;}}`)
             .appendTo("body");
     }
