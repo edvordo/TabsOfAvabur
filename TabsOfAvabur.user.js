@@ -428,15 +428,15 @@
             .appendTo("#channelPreviewWrapper");
 
         $("<span>")
-            .addClass("border2 ui-element fa fa-history materials cpa")
-            .attr("id", "CPAHistory")
-            .attr("title", "View history")
-            .appendTo("#channelPreviewActions");
-
-        $("<span>")
             .addClass("border2 ui-element fa fa-check sapphire cpa")
             .attr("id", "CPAReset")
             .attr("title", "Mark as read")
+            .appendTo("#channelPreviewActions");
+
+        $("<span>")
+            .addClass("border2 ui-element fa fa-history materials cpa")
+            .attr("id", "CPAHistory")
+            .attr("title", "View history")
             .appendTo("#channelPreviewActions");
 
         $("<span>")
