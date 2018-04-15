@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TabsOfAvabur
 // @namespace    Reltorakii.magic
-// @version      4.3.0-rc3
+// @version      4.3.0-rc4
 // @description  Tabs the channels it finds in chat, can be sorted, with notif for new messages
 // @author       Reltorakii
 // @match        https://*.avabur.com/game*
@@ -35,7 +35,8 @@
             chat_direction            : 'up',
             persistent_channels       : false,
             prepend_with_hashtag      : true,
-            abbreviate_channel_names  : false
+            abbreviate_channel_names  : false,
+            exclamate_unread_count    : false
         },
         channelsSettings: {
             channelMerger     : {
@@ -46,7 +47,7 @@
             mutedChannels     : [],
             persistentChannels: []
         },
-        version         : typeof GM_info === "object" ? GM_info.script.version : '4.3.0-rc3'
+        version         : typeof GM_info === "object" ? GM_info.script.version : '4.3.0-rc4'
     };
 
     let groupsMap             = {};
@@ -264,15 +265,19 @@
         tab.text(channelTabLabel).css({color: channel.channelColor});
         if (channel.newMessages && !channel.muted) {
 
+            let newMsgCountIndicator = channel.newMessagesCount;
+            if (options.scriptSettings.exclamate_unread_count === true) {
+                newMsgCountIndicator = '!';
+            }
             if ($(".Ch" + channel.channelID + "Badge").length === 0) {
                 $("<span>")
                     .addClass("ChBadge")
                     .addClass("border2")
                     .addClass("Ch" + channel.channelID + "Badge")
-                    .text(channel.newMessagesCount)
+                    .text(newMsgCountIndicator)
                     .appendTo("#channelTab" + channel.channelID);
             } else {
-                $(".Ch" + channel.channelID + "Badge").text(channel.newMessagesCount);
+                $(".Ch" + channel.channelID + "Badge").text(newMsgCountIndicator);
             }
         }
         if (channel.muted) {
@@ -805,6 +810,19 @@
             )
             .appendTo("#ToASettingsScriptSettings");
 
+        // use an exclamation point to indicate new messages i na channel
+        t2w.clone()
+            .append(
+                t2.clone()
+                    .html(` Use ! instead of new messages count`)
+                    .prepend(
+                        t2a.clone()
+                            .attr("data-setting", "exclamate_unread_count")
+                            .prop("checked", options.scriptSettings.exclamate_unread_count)
+                    )
+            )
+            .appendTo("#ToASettingsScriptSettings");
+
         $("<div>").addClass("clearfix").appendTo("#ToASettingsScriptSettings");
 
         $("<div>")
@@ -990,7 +1008,7 @@
             let POOption = ucfirst(match[1]);
             $(".ToAPO" + POOption).toggleClass("hidden");
         }
-        if (["prepend_with_hashtag", "abbreviate_channel_names"].indexOf(setting) !== -1) {
+        if (["prepend_with_hashtag", "abbreviate_channel_names", "exclamate_unread_count"].indexOf(setting) !== -1) {
             updateAllChannelTabs();
         }
         saveOptions();
@@ -1075,6 +1093,9 @@
                 }
                 if (typeof parsed.scriptSettings.hasOwnProperty('abbreviate_channel_names')) {
                     options.scriptSettings.abbreviate_channel_names = !!parsed.scriptSettings.abbreviate_channel_names;
+                }
+                if (typeof parsed.scriptSettings.hasOwnProperty('exclamate_unread_count')) {
+                    options.scriptSettings.exclamate_unread_count = !!parsed.scriptSettings.exclamate_unread_count;
                 }
             }
             if (typeof parsed.channelsSettings !== "undefined" && typeof parsed.version !== "undefined") {
