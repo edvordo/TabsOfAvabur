@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TabsOfAvabur
 // @namespace    Reltorakii.magic
-// @version      4.3.0-rc5
+// @version      4.3.0-rc6
 // @description  Tabs the channels it finds in chat, can be sorted, with notif for new messages
 // @author       Reltorakii
 // @match        https://*.avabur.com/game*
@@ -48,7 +48,7 @@
             mutedChannels     : [],
             persistentChannels: []
         },
-        version         : typeof GM_info === "object" ? GM_info.script.version : '4.3.0-rc5'
+        version         : typeof GM_info === "object" ? GM_info.script.version : '4.3.0-rc6'
     };
 
     let groupsMap             = {};
@@ -576,10 +576,14 @@
             .addClass("border2 ui-element")
             .appendTo("body");
 
-        let author = $('<a>').attr({href: 'javascript:void(0)', id: 'ToAAuthor'}).text('@Reltorakii').outerHTML();
+        // let author = $('<a>').attr({href: 'javascript:void(0)', id: 'ToAAuthor'}).text('@Reltorakii').outerHTML();
+        let author = document.createElement('a');
+            author.setAttribute('href', 'javascript:void(0');
+            author.setAttribute('id', 'ToAAuthor');
+            author.appendChild(document.createTextNode('@Reltorakii'));
         $("<h5>")
             .css("text-align", "center")
-            .append(`TabsOfAvabur v${options.version} by ${author} - Settings`)
+            .append(`TabsOfAvabur v${options.version} by ${author.outerHTML} - Settings`)
             .appendTo("#ToASettingsWindow");
 
         $("<div>")
@@ -588,11 +592,11 @@
             .appendTo("#ToASettingsWindow");
 
         let tm = $("<div>")
-            .addClass("col-sm-3 text-center");
+            .addClass("col-sm-4 text-center");
 
         let tm1 = tm.clone().appendTo("#ToASWMenu");
         let tm2 = tm.clone().appendTo("#ToASWMenu");
-        let tm3 = tm.clone().appendTo("#ToASWMenu");
+        // let tm3 = tm.clone().appendTo("#ToASWMenu");
         let tm4 = tm.clone().appendTo("#ToASWMenu");
 
         $("<button>")
@@ -609,12 +613,12 @@
             .text("Channel Manager")
             .appendTo(tm2);
 
-        $("<button>")
-            .attr({type: "button", id: "ToAChannelHistory"})
-            .data('target', '#ToASettingsChannelHistory')
-            .addClass("btn btn-primary btn-block")
-            .text("Channels History")
-            .appendTo(tm3);
+        // $("<button>")
+        //     .attr({type: "button", id: "ToAChannelHistory"})
+        //     .data('target', '#ToASettingsChannelHistory')
+        //     .addClass("btn btn-primary btn-block")
+        //     .text("Channels History")
+        //     .appendTo(tm3);
 
         $("<button>")
             .attr({type: "button", id: "ToAChangelog"})
