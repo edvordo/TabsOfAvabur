@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TabsOfAvabur
 // @namespace    Reltorakii.magic
-// @version      4.3.0-rc4
+// @version      4.3.0-rc5
 // @description  Tabs the channels it finds in chat, can be sorted, with notif for new messages
 // @author       Reltorakii
 // @match        https://*.avabur.com/game*
@@ -36,6 +36,7 @@
             persistent_channels       : false,
             prepend_with_hashtag      : true,
             abbreviate_channel_names  : false,
+            loose_abbreviation        : true,
             exclamate_unread_count    : false
         },
         channelsSettings: {
@@ -47,7 +48,7 @@
             mutedChannels     : [],
             persistentChannels: []
         },
-        version         : typeof GM_info === "object" ? GM_info.script.version : '4.3.0-rc4'
+        version         : typeof GM_info === "object" ? GM_info.script.version : '4.3.0-rc5'
     };
 
     let groupsMap             = {};
@@ -209,7 +210,11 @@
         }
 
         if (channelName.match(/^[A-Z]+$/) || channelName.match(/^[a-z]+$/)) {
-            return channelName.charAt(0);
+            if (options.scriptSettings.loose_abbreviation === true) {
+                return channelName.substr(0, 3);
+            } else {
+                return channelName.charAt(0);
+            }
         }
 
         let cnsp = channelName.split(' ');
@@ -227,11 +232,19 @@
             return cnup.map(abbreviateChannelName).join('_');
         }
 
-        return channelName.split(/[a-z']+/g).map(part => {
+        let regex = /[a-z']+/g;
+        if (options.scriptSettings.loose_abbreviation === true) {
+            regex = /([a-z]{1,}|['])+/g
+        }
+        return channelName.split(regex).map(part => {
             if (part.match(/^[A-Z]+$/)) {
                 return part;
             }
-            return part.charAt(0);
+            if (options.scriptSettings.loose_abbreviation === true) {
+                return part.substr(0, 2);
+            } else {
+                return part.charAt(0);
+            }
         }).join('');
     }
 
@@ -797,6 +810,19 @@
             )
             .appendTo("#ToASettingsScriptSettings");
 
+        // use an exclamation point to indicate new messages i na channel
+        t2w.clone()
+            .append(
+                t2.clone()
+                    .html(` Use ! instead of new messages count`)
+                    .prepend(
+                        t2a.clone()
+                            .attr("data-setting", "exclamate_unread_count")
+                            .prop("checked", options.scriptSettings.exclamate_unread_count)
+                    )
+            )
+            .appendTo("#ToASettingsScriptSettings");
+
         // abbr channel names
         t2w.clone()
             .append(
@@ -810,15 +836,15 @@
             )
             .appendTo("#ToASettingsScriptSettings");
 
-        // use an exclamation point to indicate new messages i na channel
+        // loose abbreviation
         t2w.clone()
             .append(
                 t2.clone()
-                    .html(` Use ! instead of new messages count`)
+                    .html(` Loose abbreviation (e.g.: TabsOfAvabur => TabOfAva OR Main => Mai)`)
                     .prepend(
                         t2a.clone()
-                            .attr("data-setting", "exclamate_unread_count")
-                            .prop("checked", options.scriptSettings.exclamate_unread_count)
+                            .attr("data-setting", "loose_abbreviation")
+                            .prop("checked", options.scriptSettings.loose_abbreviation)
                     )
             )
             .appendTo("#ToASettingsScriptSettings");
@@ -1008,7 +1034,7 @@
             let POOption = ucfirst(match[1]);
             $(".ToAPO" + POOption).toggleClass("hidden");
         }
-        if (["prepend_with_hashtag", "abbreviate_channel_names", "exclamate_unread_count"].indexOf(setting) !== -1) {
+        if (["prepend_with_hashtag", "abbreviate_channel_names", "loose_abbreviation", "exclamate_unread_count"].indexOf(setting) !== -1) {
             updateAllChannelTabs();
         }
         saveOptions();
@@ -1093,6 +1119,9 @@
                 }
                 if (typeof parsed.scriptSettings.hasOwnProperty('abbreviate_channel_names')) {
                     options.scriptSettings.abbreviate_channel_names = !!parsed.scriptSettings.abbreviate_channel_names;
+                }
+                if (typeof parsed.scriptSettings.hasOwnProperty('loose_abbreviation')) {
+                    options.scriptSettings.loose_abbreviation = !!parsed.scriptSettings.loose_abbreviation;
                 }
                 if (typeof parsed.scriptSettings.hasOwnProperty('exclamate_unread_count')) {
                     options.scriptSettings.exclamate_unread_count = !!parsed.scriptSettings.exclamate_unread_count;
