@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         TabsOfAvabur
 // @namespace    Reltorakii.magic
-// @version      4.3.1
+// @version      4.4.0-alpha
 // @description  Tabs the channels it finds in chat, can be sorted, with notif for new messages
 // @author       Reltorakii
-// @match        https://*.avabur.com/game*
+// @match        http*://*.avabur.com/game*
 // @downloadURL  https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js
 // @updateURL    https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js
 // @require      https://cdn.rawgit.com/omichelsen/compare-versions/v3.1.0/index.js
@@ -48,20 +48,22 @@
             mutedChannels     : [],
             persistentChannels: []
         },
-        version         : typeof GM_info === "object" ? GM_info.script.version : '4.3.1'
+        version         : typeof GM_info === "object" ? GM_info.script.version : '4.4.0-alpha'
     };
 
     let groupsMap             = {};
     let channelLog            = {};
-    let currentChannel        = "Main";
+    let currentChannel        = null;
     let ServerMessagesChannel = "SML_325725_2338723_CHC";
     let CMDResposeChannel     = "CMDRC_4000_8045237_CHC";
     let WhispersChannel       = "UW_7593725_3480021_CHC";
     let WiresChannel          = "WC_0952340_3245901_CHC";
     let MergedChannelsGroup   = "MCG_105704_4581101_CHC";
 
-    let GlobalChannel = 1000000000;
-    let EventChannel  = 2000000000;
+    let firstTabSelected = false;
+
+    let GlobalChannel = '1000000000';
+    let EventChannel  = '2000000000';
 
     let scriptChannels = [ServerMessagesChannel, CMDResposeChannel, WhispersChannel, WiresChannel];
 
@@ -73,35 +75,68 @@
 
     let checkForUpdateTimer = 0;
 
+    let SSN = 0;
+
+    let maxMessageCount = 250; // this is a max forced by the game itself
+
     function log(message) {
         console.log(`[${(new Date).toLocaleTimeString()}] [Tabs of Avabur (v${options.version})] ${message}`);
     }
 
     function ChannelHistory() {
-        let messages = {};
+        let messages = [];
+
+        function __removeOldest() {
+            while (messages.length > maxMessageCount) {
+                if (options.scriptSettings.chat_direction === 'up') {
+                    messages.pop();
+                } else {
+                    messages.shift();
+                }
+            }
+        }
 
         function __addMessage(message) {
-            let keys = Object.keys(messages);
-            if (keys.length > 100) {
-                let first = keys.shift();
-                delete messages[first];
+            __removeOldest();
+            if (options.scriptSettings.chat_direction === 'up') {
+                messages.unshift(message);
+            } else {
+                messages.push(message);
             }
-            messages[Date.now()] = message;
+        }
+
+        function __getMessages() {
+            return messages;
+        }
+
+        function __clearMessages() {
+            messages = [];
+        }
+
+        function __getMessageCount() {
+            return messages.length;
+        }
+
+        function __reverseMessages() {
+            messages.reverse();
         }
 
         return {
-            addMessage: __addMessage
+            addMessage     : __addMessage,
+            getMessages    : __getMessages,
+            clearMessages  : __clearMessages,
+            getMessageCount: __getMessageCount,
+            reverseMessages: __reverseMessages
         };
     }
 
     function returnCustomID(channel, resolved, cname, on) {
-        let obj = {
+        return {
             cID : channel,
             res : resolved,
             name: cname,
             on  : typeof on !== "undefined" ? on : name
         };
-        return obj;
     }
 
     function resolveChannelID(channel) {
@@ -112,7 +147,7 @@
             channel = "Global";
         } else if (channel === "CLAN") {
             channel = "Clan";
-        } else if (channel.substr(0, 4) === "AREA") {
+        } else if (channel && channel.substr(0, 4) === "AREA") {
             channel = "Area";
         } else if (channel === "HELP") {
             channel = "Help";
@@ -128,7 +163,7 @@
             return returnCustomID(WiresChannel, true, channel, origChannelName);
         } else if (channel === "Server Messages") {
             return returnCustomID(ServerMessagesChannel, true, channel, origChannelName);
-        } else if (channel.match(/^(Battle|Fishing|Woodcutting|Mining|Stonecutting|Crafting|Carving|Event):\s+[0-9]+/)) {
+        } else if (channel && channel.match(/^(Battle|Fishing|Woodcutting|Mining|Stonecutting|Crafting|Carving|Event):\s+[0-9]+/)) {
             return returnCustomID(CMDResposeChannel, true, "", origChannelName);//  info channel changes this later
         }
         let map = {
@@ -139,7 +174,7 @@
             "Staff" : "STAFF",
             "Trade" : "TRADE"
         };
-        if (typeof map[origChannelName] !== "undefined") {
+        if (map.hasOwnProperty(origChannelName)) {
             origChannelName = map[origChannelName];
         }
 
@@ -163,7 +198,7 @@
 
         if (channelID === 0) {
             resolved  = false;
-            channelID = "2";// Main
+            channelID = CMDResposeChannel; // Main
         }
 
         return returnCustomID(channelID, resolved, channel, origChannelName);
@@ -196,7 +231,7 @@
     }
 
     function updateAllChannelTabs() {
-        $("#channelTabList").find(".channelTab").each(function(){
+        $("#channelTabList").find(".channelTab").each(function () {
             let channel = $(this).data("channel");
             if (channel) {
                 updateChannelList(channelLog[channel]);
@@ -256,7 +291,7 @@
             }
             $("<div>")
                 .attr({
-                    id: `channelTab${channel.channelID}`,
+                    id            : `channelTab${channel.channelID}`,
                     "data-channel": channel.channelID
                 })
                 .addClass("border2 ui-element channelTab")
@@ -281,6 +316,8 @@
             let newMsgCountIndicator = channel.newMessagesCount;
             if (options.scriptSettings.exclamate_unread_count === true) {
                 newMsgCountIndicator = '!';
+            } else if (newMsgCountIndicator > maxMessageCount) {
+                newMsgCountIndicator = `${maxMessageCount}+`;
             }
             if ($(".Ch" + channel.channelID + "Badge").length === 0) {
                 $("<span>")
@@ -300,6 +337,9 @@
         }
         if (withPersistentUpdate) {
             savePersistentChannels();
+        }
+        if (firstTabSelected === false && document.querySelectorAll('.channelTab').length === 1) {
+            document.querySelector('.channelTab').click();
         }
     }
 
@@ -350,7 +390,7 @@
     }
 
     function ucfirst(str) {
-        let first  = str.charAt(0).toUpperCase();
+        let first = str.charAt(0).toUpperCase();
 
         return first + str.substr(1);
     }
@@ -400,18 +440,20 @@
         log('Pulling script repo tags');
         let container = $('#ToASettingsChangelog > #ToACLLog');
         container.html('');
-        $.get(internalReleasesUrl).then((releases) => {
-            for (let release of releases) {
-                // release.name, release.body, new Date(release.published_at), release.html_url;
-                container.append(`<div>
+        fetch(internalReleasesUrl)
+            .then(response => response.json())
+            .then(releases => {
+                for (let release of releases) {
+                    // release.name, release.body, new Date(release.published_at), release.html_url;
+                    container.append(`<div>
     <h5>
         ${release.name}<br>
         <small>${(new Date(release.published_at)).toLocaleString()}</small>
     </h5>
     ${markdownit().use(markdownitEmoji).render(release.body)}
 </div>`);
-            }
-        });
+                }
+            });
     }
 
     function prepareHTML() {
@@ -576,11 +618,10 @@
             .addClass("border2 ui-element")
             .appendTo("body");
 
-        // let author = $('<a>').attr({href: 'javascript:void(0)', id: 'ToAAuthor'}).text('@Reltorakii').outerHTML();
         let author = document.createElement('a');
-            author.setAttribute('href', 'javascript:void(0');
-            author.setAttribute('id', 'ToAAuthor');
-            author.appendChild(document.createTextNode('@Reltorakii'));
+        author.setAttribute('href', 'javascript:void(0');
+        author.setAttribute('id', 'ToAAuthor');
+        author.appendChild(document.createTextNode('@Reltorakii'));
         $("<h5>")
             .css("text-align", "center")
             .append(`TabsOfAvabur v${options.version} by ${author.outerHTML} - Settings`)
@@ -1018,8 +1059,6 @@
             .appendTo("body");
     }
 
-    let SSN = 0;
-
     function saveOptions() {
         clearTimeout(SSN);
         let opts = JSON.stringify(options);
@@ -1038,7 +1077,13 @@
             let POOption = ucfirst(match[1]);
             $(".ToAPO" + POOption).toggleClass("hidden");
         }
-        if (["prepend_with_hashtag", "abbreviate_channel_names", "loose_abbreviation", "exclamate_unread_count"].indexOf(setting) !== -1) {
+        let chanelTabsUpdatableSettings = [
+            "prepend_with_hashtag",
+            "abbreviate_channel_names",
+            "loose_abbreviation",
+            "exclamate_unread_count"
+        ];
+        if (chanelTabsUpdatableSettings.indexOf(setting) !== -1) {
             updateAllChannelTabs();
         }
         saveOptions();
@@ -1061,6 +1106,7 @@
         let confirmText = `Are you sure you want purge the "${channelName}" channel${(andRemove ? 'and remove it from tabs' : '')}?\nThis only affects your screen.`;
         if (confirmToo || window.confirm(confirmText)) {
             $(".chc_" + channelID).remove();
+            channelLog[channelID].messageHistory.clearMessages();
             resetUnreadCount();
             if (andRemove) {
                 $("#channelTab" + channelID).remove();
@@ -1078,65 +1124,65 @@
         let stored = localStorage.getItem("ToAOPTS");
         try {
             let parsed = JSON.parse(stored);
-            if (typeof parsed.hasOwnProperty('scriptSettings')) {
-                if (typeof parsed.scriptSettings.hasOwnProperty('purge')) {
+            if (parsed.hasOwnProperty('scriptSettings')) {
+                if (parsed.scriptSettings.hasOwnProperty('purge')) {
                     options.scriptSettings.purge = !!parsed.scriptSettings.purge;
                 }
-                if (typeof parsed.scriptSettings.hasOwnProperty('channel_remove')) {
+                if (parsed.scriptSettings.hasOwnProperty('channel_remove')) {
                     options.scriptSettings.channel_remove = !!parsed.scriptSettings.channel_remove;
                 }
-                if (typeof parsed.scriptSettings.hasOwnProperty('preview')) {
+                if (parsed.scriptSettings.hasOwnProperty('preview')) {
                     options.scriptSettings.preview = !!parsed.scriptSettings.preview;
                 }
-                if (typeof parsed.scriptSettings.hasOwnProperty('preview_reset')) {
+                if (parsed.scriptSettings.hasOwnProperty('preview_reset')) {
                     options.scriptSettings.preview_reset = !!parsed.scriptSettings.preview_reset;
                 }
-                if (typeof parsed.scriptSettings.hasOwnProperty('group_wires')) {
+                if (parsed.scriptSettings.hasOwnProperty('group_wires')) {
                     options.scriptSettings.group_wires = !!parsed.scriptSettings.group_wires;
                 }
-                if (typeof parsed.scriptSettings.hasOwnProperty('at_username')) {
+                if (parsed.scriptSettings.hasOwnProperty('at_username')) {
                     options.scriptSettings.at_username = !!parsed.scriptSettings.at_username;
                 }
-                if (typeof parsed.scriptSettings.hasOwnProperty('join_channel_link')) {
+                if (parsed.scriptSettings.hasOwnProperty('join_channel_link')) {
                     options.scriptSettings.join_channel_link = !!parsed.scriptSettings.join_channel_link;
                 }
-                if (typeof parsed.scriptSettings.hasOwnProperty('auto_join')) {
+                if (parsed.scriptSettings.hasOwnProperty('auto_join')) {
                     options.scriptSettings.auto_join = !!parsed.scriptSettings.auto_join;
                 }
-                if (typeof parsed.scriptSettings.hasOwnProperty('profile_tooltip_nickname')) {
+                if (parsed.scriptSettings.hasOwnProperty('profile_tooltip_nickname')) {
                     options.scriptSettings.profile_tooltip_nickname = !!parsed.scriptSettings.profile_tooltip_nickname;
                 }
-                if (typeof parsed.scriptSettings.hasOwnProperty('profile_tooltip_mention')) {
+                if (parsed.scriptSettings.hasOwnProperty('profile_tooltip_mention')) {
                     options.scriptSettings.profile_tooltip_mention = !!parsed.scriptSettings.profile_tooltip_mention;
                 }
-                if (typeof parsed.scriptSettings.hasOwnProperty('profile_tooltip_quickscope')) {
+                if (parsed.scriptSettings.hasOwnProperty('profile_tooltip_quickscope')) {
                     options.scriptSettings.profile_tooltip_quickscope = !!parsed.scriptSettings.profile_tooltip_quickscope;
                 }
-                if (typeof parsed.scriptSettings.hasOwnProperty('chat_direction')) {
+                if (parsed.scriptSettings.hasOwnProperty('chat_direction')) {
                     options.scriptSettings.chat_direction = parsed.scriptSettings.chat_direction;
                 }
-                if (typeof parsed.scriptSettings.hasOwnProperty('persistent_channels')) {
+                if (parsed.scriptSettings.hasOwnProperty('persistent_channels')) {
                     options.scriptSettings.persistent_channels = !!parsed.scriptSettings.persistent_channels;
                 }
-                if (typeof parsed.scriptSettings.hasOwnProperty('prepend_with_hashtag')) {
+                if (parsed.scriptSettings.hasOwnProperty('prepend_with_hashtag')) {
                     options.scriptSettings.prepend_with_hashtag = !!parsed.scriptSettings.prepend_with_hashtag;
                 }
-                if (typeof parsed.scriptSettings.hasOwnProperty('abbreviate_channel_names')) {
+                if (parsed.scriptSettings.hasOwnProperty('abbreviate_channel_names')) {
                     options.scriptSettings.abbreviate_channel_names = !!parsed.scriptSettings.abbreviate_channel_names;
                 }
-                if (typeof parsed.scriptSettings.hasOwnProperty('loose_abbreviation')) {
+                if (parsed.scriptSettings.hasOwnProperty('loose_abbreviation')) {
                     options.scriptSettings.loose_abbreviation = !!parsed.scriptSettings.loose_abbreviation;
                 }
-                if (typeof parsed.scriptSettings.hasOwnProperty('exclamate_unread_count')) {
+                if (parsed.scriptSettings.hasOwnProperty('exclamate_unread_count')) {
                     options.scriptSettings.exclamate_unread_count = !!parsed.scriptSettings.exclamate_unread_count;
                 }
             }
-            if (typeof parsed.channelsSettings !== "undefined" && typeof parsed.version !== "undefined") {
-                if (typeof parsed.channelsSettings.mutedChannels !== "undefined" && Array.isArray(parsed.channelsSettings.mutedChannels)) {
+            if (parsed.hasOwnProperty('channelsSettings') && parsed.hasOwnProperty('version')) {
+                if (parsed.channelsSettings.hasOwnProperty('mutedChannels') && Array.isArray(parsed.channelsSettings.mutedChannels)) {
                     options.channelsSettings.mutedChannels = parsed.channelsSettings.mutedChannels;
                 }
-                if (typeof parsed.channelsSettings.channelMerger !== "undefined") {
-                    if (typeof parsed.channelsSettings.channelMerger.groups !== "undefined" && Array.isArray(parsed.channelsSettings.channelMerger.groups)) {
+                if (parsed.channelsSettings.hasOwnProperty('channelMerger')) {
+                    if (parsed.channelsSettings.channelMerger.hasOwnProperty('groups') && Array.isArray(parsed.channelsSettings.channelMerger.groups)) {
                         for (let ccg in parsed.channelsSettings.channelMerger.groups) {
                             let groupName = parsed.channelsSettings.channelMerger.groups[ccg];
                             if (typeof groupName === "string" && options.channelsSettings.channelMerger.groups.indexOf(groupName) === -1) {
@@ -1145,10 +1191,10 @@
                             }
                         }
                     }
-                    if (typeof parsed.channelsSettings.channelMerger.mapping !== "undefined" && typeof parsed.channelsSettings.channelMerger.mapping === "object") {
+                    if (typeof parsed.channelsSettings.channelMerger.hasOwnProperty('mapping') && typeof parsed.channelsSettings.channelMerger.mapping === "object") {
                         options.channelsSettings.channelMerger.mapping = parsed.channelsSettings.channelMerger.mapping;
                     }
-                    if (typeof parsed.channelsSettings.channelMerger.defaultChannels !== "undefined" && typeof parsed.channelsSettings.channelMerger.defaultChannels === "object") {
+                    if (typeof parsed.channelsSettings.channelMerger.hasOwnProperty('defaultChannels') && typeof parsed.channelsSettings.channelMerger.defaultChannels === "object") {
                         options.channelsSettings.channelMerger.defaultChannels = parsed.channelsSettings.channelMerger.defaultChannels;
                     }
                 }
@@ -1250,31 +1296,29 @@
             return false;
         }
         let username = $("#profileOptionTooltip").attr("data-username");
-        $.confirm(
-            {
-                "title"  : "Nickname for " + username,
-                "message": "<input type=\"text\" id=\"ToASPONicknameName\" style=\"width:100%;\" placeholder=\"Leave blank to unnickname\">",
-                "buttons": {
-                    "Nickname": {
-                        "class" : "green",
-                        "action": function () {
-                            let newNick = $("#ToASPONicknameName").val();
-                            if (newNick.match(/^\s*$/)) {
-                                $("#chatMessage").text("/unnickname " + username);
-                            } else {
-                                $("#chatMessage").text("/nickname " + username + " " + newNick);
-                            }
-                            $("#chatSendMessage").click();
+        $.confirm({
+            "title"  : "Nickname for " + username,
+            "message": "<input type=\"text\" id=\"ToASPONicknameName\" style=\"width:100%;\" placeholder=\"Leave blank to unnickname\">",
+            "buttons": {
+                "Nickname": {
+                    "class" : "green",
+                    "action": function () {
+                        let newNick = $("#ToASPONicknameName").val();
+                        if (newNick.match(/^\s*$/)) {
+                            $("#chatMessage").text("/unnickname " + username);
+                        } else {
+                            $("#chatMessage").text("/nickname " + username + " " + newNick);
                         }
-                    },
-                    "Cancel"  : {
-                        "class" : "red",
-                        "action": function () {
-                        }
+                        $("#chatSendMessage").click();
+                    }
+                },
+                "Cancel"  : {
+                    "class" : "red",
+                    "action": function () {
                     }
                 }
             }
-        );
+        });
         setTimeout(function () {
             $("#ToASPONicknameName").val("").focus();
         }, 500);
@@ -1326,171 +1370,208 @@
 
     function checkForUpdate() {
         let version = "";
-        $.get(internalUpdateUrl).done(function (res) {
-            let match = atob(res.content).match(/\/\/\s+@version\s+([^\n]+)/);
-            version   = match[1];
 
-            if (compareVersions(options.version, version) < 0) {
-                populateChangelog();
-                let message = `<li class="chat_notification">TabsOfAvabur has been updated to version ${version}! <a href="https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js" target="_blank">Update</a> | <a href="javascript:void(0);" id="ToAUpdateShowChangelog">Changelog</a></li>`;
-                if (options.scriptSettings.chat_direction === "up") {
-                    $("#chatMessageList").prepend(message);
+        fetch(internalUpdateUrl)
+            .then(response => response.json())
+            .then(data => {
+                let match = atob(data.content).match(/\/\/\s+@version\s+([^\n]+)/);
+                version   = match[1];
+
+                if (compareVersions(options.version, version) < 0) {
+                    populateChangelog();
+                    let message = `<li class="chat_notification">TabsOfAvabur has been updated to version ${version}! <a href="https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js" target="_blank">Update</a> | <a href="javascript:void(0);" id="ToAUpdateShowChangelog">Changelog</a></li>`;
+                    if (options.scriptSettings.chat_direction === "up") {
+                        $("#chatMessageList").prepend(message);
+                    } else {
+                        $("#chatMessageList").append(message);
+                        scrollToBottom('#channelPreviewContent');
+                    }
                 } else {
-                    $("#chatMessageList").append(message);
-                    scrollToBottom('#channelPreviewContent');
+                    checkForUpdateTimer = setTimeout(checkForUpdate, 24 * 60 * 60 * 1000);
                 }
-            } else {
-                checkForUpdateTimer = setTimeout(checkForUpdate, 24 * 60 * 60 * 1000);
+            });
+    }
+
+    function processMessage(e) {
+        // console.log($("#chatChannel option").length);
+        let element = $(e);
+        if (element.hasClass('processed')) {
+            return ;
+        }
+
+        let plainText   = element.text();
+        // lets get rid of staff stuff
+        plainText       = plainText.replace(/^\[X\]\s*/, "");
+        // now clean up spaces
+        plainText       = plainText.replace(/\s+/g, " ");
+        // default message format [11:11:11] [Channel] (optional) the rest of the message
+        let defaultMsg  = plainText.match(/^\[([^\]]+)\]\s*(\[([^\]]+)\])?\s*(.*)/);
+        // clan MoTD: [11 Nov, 1111] Clan Message of the Day:
+        let isClanMoTD  = plainText.replace(/^\[[0-9]+\s+[a-zA-Z]+\,\s*[0-9]+\]\s*/, "").indexOf("Clan Message of the Day:") === 0;
+        // clan MoTD: [11 Nov, 1111] Message of the Day:
+        let isRoAMoTD   = plainText.replace(/^\[[0-9]+\s+[a-zA-Z]+\,\s*[0-9]+\]\s*/, "").indexOf("Message of the Day:") === 0;
+        // Staff Server Messages [11:11:11] [ Whatever the hell. ]
+        let isServerMsg = plainText.match(/^\[[^\]]+\]\s*\[\s+.*\s+]$/);
+        // whisper detection
+        let isWhisper   = plainText.match(/^\[[^\]]+\]\s*Whisper\s*(to|from)\s*([^:]+)/);
+        isWhisper       = isWhisper && element.closest("li").find("span:eq(2)").text().indexOf("Whisper") === 0;
+        isWhisper       = isWhisper || plainText.match(/^\[[^\]]+\]\s*While you were away, you received [0-9,]+ whispers?:$/);
+        // wire detection
+        let isWire      = plainText.match(/^\[[^\]]+\]\s*(You|[a-zA-Z]+)\s*wired\s*.*\s*(you|[a-zA-Z]+)\.$/);
+        // [11:11:11] Username sent a whatever to you.
+
+        let isChatNotif     = element.children(".chat_notification").length > 0 || element.hasClass("chat_notification");
+        let isChatReconnect = element.attr("id") === "websocket_reconnect_line";
+
+
+        let channel = "";
+        if (currentChannel !== null && currentChannel.match(/^[0-9]+$/) && channelLog.hasOwnProperty(currentChannel)) {
+            channel = channelLog[currentChannel].channelName;
+        } else if (currentChannel !== null && currentChannel.indexOf(MergedChannelsGroup) === 0) {
+            channel = channelLog[currentChannel].channelName;
+        } else if (currentChannel !== null && scriptChannels.indexOf(currentChannel) !== -1) {
+            channel = channelLog[currentChannel].channelName;
+        } else {
+            channel = currentChannel;
+        }
+        // let channel         = currentChannel=="Main" ? currentChannel : ;
+        let channelInfo = resolveChannelID(channel);
+
+        // validation of parsed channel name, whether the message has also valid html
+        if (defaultMsg !== null) {
+            // console.log(defaultMsg);
+            channel = typeof defaultMsg[3] === 'undefined' ? "Main" : defaultMsg[3];
+            if (channel !== "Main") {
+                let validate       = element.closest("li").find("span:eq(2)").text() === "[";
+                let quickscopeinfo = channel.match(/^(Battle|Fishing|Woodcutting|Mining|Stonecutting|Crafting|Carving|Event):\s+[0-9]+/);
+                if (!validate && quickscopeinfo === null) {
+                    channel = "Main";
+                }
+            }
+            channelInfo = resolveChannelID(channel);
+        }
+        if (isClanMoTD) {
+            channel     = "CLAN";
+            channelInfo = resolveChannelID(channel);
+        } else if (isServerMsg) {
+            channel     = "Server Messages";
+            channelInfo = resolveChannelID(channel);
+        } else if (isWhisper) {
+            channel     = "Whispers Log";
+            channelInfo = resolveChannelID(channel);
+        } else if (isWire && options.scriptSettings.group_wires) {
+            channel     = "Wires Log";
+            channelInfo = resolveChannelID(channel);
+        }
+        let channelID = channelInfo.cID;
+        channel       = channelInfo.on;
+        if (
+            channelID !== CMDResposeChannel &&
+            channelID !== ServerMessagesChannel &&
+            channelID !== WiresChannel &&
+            (isChatNotif || isChatReconnect)
+        ) {
+
+            channelID = channelInfo.cID;
+        }
+        if (channelID === CMDResposeChannel) {
+            channel = "Info Channel";
+        }
+        let channelColor = resolveChannelColor(channelID, channelInfo.name);
+
+        if (typeof options.channelsSettings.channelMerger.mapping[channel] !== "undefined") {
+            let groupName = options.channelsSettings.channelMerger.mapping[channel];
+            let groupID   = options.channelsSettings.channelMerger.groups.indexOf(groupName);
+            channelID     = MergedChannelsGroup + "_MCGID_" + groupsMap[groupName];
+            channel       = groupName;
+            channelColor  = randomColor();
+        }
+
+        if (currentChannel === null) {
+            currentChannel = channelID;
+        }
+        // console.log(currentChannel, channel);
+        // if (currentChannel != channelID) {
+        // element.addClass("hidden");
+        // }
+        element.addClass("processed");
+        element.addClass("chc_" + channelID);
+        if (!channelLog.hasOwnProperty(channelID)) {
+            createChannelEntry(channel, channelID, channelColor);
+        }
+        if (channelID != currentChannel) {
+            channelLog[channelID].newMessages = true;
+            channelLog[channelID].newMessagesCount++;
+        }
+        channelLog[channelID].messages++;
+
+        // if (options.channelsSettings.mutedChannels.indexOf(channel) !== -1) {
+        //     $(e).remove();
+        // }
+
+        if (options.scriptSettings.at_username) {
+            element.html(element.html().replace(/\@([a-zA-Z]+)/g, "@<a class=\"profileLink\">$1</a>"));
+        }
+
+        if (options.scriptSettings.join_channel_link) {
+            element.html(
+                element
+                    .html()
+                    .replace(
+                        /\/join\s+([^\s]+)\s*([^\s<]+)?/,
+                        `/join <a class="joinChannel">$1</a> <span class="jcPWD">$2</span>`
+                    )
+            );
+        }
+
+        channelLog[channelID].messageHistory.addMessage(element);
+        if (channelID != currentChannel) {
+            // console.log(`rem cos c:"${currentChannel}" != r:"${channelID}" (${element.text()})`);
+            element.remove();
+            // element.addClass('hidden');
+        }
+
+        if (plainText.match(/tabs\s+of\s+avabur/i) !== null) {
+            clearTimeout(checkForUpdateTimer);
+            checkForUpdateTimer = setTimeout(checkForUpdate, randomInt(30, 120) * 1000);
+        }
+
+        updateChannelList(channelLog[channelID]);
+    }
+
+    function loadMessages() {
+        let o = new MutationObserver(function(ml) {
+
+            if ($("#chatWrapper>div:nth-child(2)").attr("id") === "chatMessageWrapper") {
+                $("#channelTabListWrapper").insertBefore("#chatMessageListWrapper");
+            }
+
+            for (let m of ml) {
+                if (m.addedNodes.length) {
+                    processMessage(m.addedNodes[0]);
+                }
             }
         });
+        log('Starting chat monitor loop');
+        o.observe(document.querySelector('#chatMessageList'), {childList: true});
     }
 
-    function loadMessages(t) {
-        if ($("#chatChannel option").length > 2) {
-            $("#chatMessageList li:not(.processed)").each(function (i, e) {
-                let plainText   = $(e).text();
-                // lets get rid of staff stuff
-                plainText       = plainText.replace(/^\[X\]\s*/, "");
-                // now clean up spaces
-                plainText       = plainText.replace(/\s+/g, " ");
-                // default message format [11:11:11] [Channel] (optional) the rest of the message
-                let defaultMsg  = plainText.match(/^\[([^\]]+)\]\s*(\[([^\]]+)\])?\s*(.*)/);
-                // clan MoTD: [11 Nov, 1111] Clan Message of the Day:
-                let isClanMoTD  = plainText.replace(/^\[[0-9]+\s+[a-zA-Z]+\,\s*[0-9]+\]\s*/, "").indexOf("Clan Message of the Day:") === 0;
-                // clan MoTD: [11 Nov, 1111] Message of the Day:
-                let isRoAMoTD   = plainText.replace(/^\[[0-9]+\s+[a-zA-Z]+\,\s*[0-9]+\]\s*/, "").indexOf("Message of the Day:") === 0;
-                // Staff Server Messages [11:11:11] [ Whatever the hell. ]
-                let isServerMsg = plainText.match(/^\[[^\]]+\]\s*\[\s+.*\s+]$/);
-                // whisper detection
-                let isWhisper   = plainText.match(/^\[[^\]]+\]\s*Whisper\s*(to|from)\s*([^:]+)/);
-                isWhisper       = isWhisper && $(this).closest("li").find("span:eq(2)").text().indexOf("Whisper") === 0;
-                // wire detection
-                let isWire      = plainText.match(/^\[[^\]]+\]\s*(You|[a-zA-Z]+)\s*wired\s*.*\s*(you|[a-zA-Z]+)\.$/);
-                // [11:11:11] Username sent a whatever to you.
-
-                let isChatNotif     = $(e).children(".chat_notification").length > 0 || $(e).hasClass("chat_notification");
-                let isChatReconnect = $(e).attr("id") === "websocket_reconnect_line";
-
-                let channel = "";
-                if (currentChannel.match(/^[0-9]+$/)) {
-                    channel = channelLog[currentChannel].channelName;
-                } else if (currentChannel.indexOf(MergedChannelsGroup) === 0) {
-                    channel = channelLog[currentChannel].channelName;
-                } else if (scriptChannels.indexOf(currentChannel) !== -1) {
-                    channel = channelLog[currentChannel].channelName;
-                } else {
-                    channel = currentChannel;
-                }
-                // let channel         = currentChannel=="Main" ? currentChannel : ;
-                let channelInfo = resolveChannelID(channel);
-
-                if (defaultMsg !== null) {
-                    channel = typeof defaultMsg[3] === "undefined" ? "Main" : defaultMsg[3];
-                    if (channel !== "Main") {
-                        let validate       = $(this).closest("li").find("span:eq(2)").text() === "[";
-                        let quickscopeinfo = channel.match(/^(Battle|Fishing|Woodcutting|Mining|Stonecutting|Crafting|Carving|Event):\s+[0-9]+/);
-                        if (!validate && quickscopeinfo === null) {
-                            channel = "Main";
-                        }
-                    }
-                    channelInfo = resolveChannelID(channel);
-                }
-                if (isClanMoTD) {
-                    channel     = "CLAN";
-                    channelInfo = resolveChannelID(channel);
-                } else if (isServerMsg) {
-                    channel     = "Server Messages";
-                    channelInfo = resolveChannelID(channel);
-                } else if (isWhisper) {
-                    channel     = "Whispers Log";
-                    channelInfo = resolveChannelID(channel);
-                } else if (isWire && options.scriptSettings.group_wires) {
-                    channel     = "Wires Log";
-                    channelInfo = resolveChannelID(channel);
-                }
-                let channelID = channelInfo.cID;
-                channel       = channelInfo.on;
-                if (
-                    channelID !== CMDResposeChannel &&
-                    channelID !== ServerMessagesChannel &&
-                    channelID !== WiresChannel &&
-                    (isChatNotif || isChatReconnect)
-                ) {
-
-                    channelID = channelInfo.cID;
-                }
-                // console.log("chinfo:");
-                // console.log(channelInfo);
-                if (channelID === CMDResposeChannel) {
-                    channel = "Info Channel";
-                }
-                let channelColor = resolveChannelColor(channelID, channelInfo.name);
-
-                if (typeof options.channelsSettings.channelMerger.mapping[channel] !== "undefined") {
-                    let groupName = options.channelsSettings.channelMerger.mapping[channel];
-                    let groupID   = options.channelsSettings.channelMerger.groups.indexOf(groupName);
-                    channelID     = MergedChannelsGroup + "_MCGID_" + groupsMap[groupName];
-                    channel       = groupName;
-                    channelColor  = randomColor();
-                }
-                if (currentChannel != channelID) {
-                    $(e).addClass("hidden");
-                }
-                $(e).addClass("processed");
-                $(e).addClass("chc_" + channelID);
-                if (!channelLog.hasOwnProperty(channelID)) {
-                    createChannelEntry(channel, channelID, channelColor);
-                }
-                if (channelID != currentChannel) {
-                    channelLog[channelID].newMessages = true;
-                    channelLog[channelID].newMessagesCount++;
-                }
-                channelLog[channelID].messages++;
-                if (options.channelsSettings.mutedChannels.indexOf(channel) !== -1) {
-                    $(e).remove();
-                }
-                if (channelID != currentChannel) {
-                    // TODO: add the message to ChannelHistory and delete
-                }
-
-                if (options.scriptSettings.at_username) {
-                    $(e).html($(e).html().replace(/\@([a-zA-Z]+)/g, "@<a class=\"profileLink\">$1</a>"));
-                }
-
-                if (options.scriptSettings.join_channel_link) {
-                    $(e).html(
-                        $(e)
-                            .html()
-                            .replace(
-                                /\/join\s+([^\s]+)\s*([^\s<]+)?/,
-                                `/join <a class="joinChannel">$1</a> <span class="jcPWD">$2</span>`
-                            )
-                    );
-                }
-
-                if (plainText.match(/tabs\s+of\s+avabur/i) !== null) {
-                    clearTimeout(checkForUpdateTimer);
-                    checkForUpdateTimer = setTimeout(checkForUpdate, randomInt(30, 120) * 1000);
-                }
-
-                updateChannelList(channelLog[channelID]);
-            });
-        }
-
-        if (typeof t === "undefined") {
-            setTimeout(loadMessages, 500);
-        }
-        if ($("#chatWrapper>div:nth-child(2)").attr("id") === "chatMessageWrapper") {
-            $("#channelTabListWrapper").insertBefore("#chatMessageListWrapper");
-        }
-    }
+    // function doubleCheckUnprocessed(t) {
+    //     $("#chatMessageList li:not(.processed)").each(function (i, e) {
+    //         processMessage(e);
+    //     });
+    //
+    //     setTimeout(doubleCheckUnprocessed, 10000);
+    //
+    //     if ($("#chatWrapper>div:nth-child(2)").attr("id") === "chatMessageWrapper") {
+    //         $("#channelTabListWrapper").insertBefore("#chatMessageListWrapper");
+    //     }
+    // }
 
     function scrollToBottom(selector) {
-        $(selector).animate(
-            {
-                scrollTop: $(selector).prop("scrollHeight")
-            }
-        );
+        $(selector).animate({
+            scrollTop: $(selector).prop("scrollHeight")
+        });
     }
 
     function savePersistentChannels() {
@@ -1526,12 +1607,11 @@
 
         for (let channel of options.channelsSettings.persistentChannels) {
             createChannelEntry(channel.n, channel.i, channel.c, false);
-            // console.log(channelLog[channel.i]);
             updateChannelList(channelLog[channel.i], false);
         }
     }
 
-    function setuEvents() {
+    function setupEvents() {
         log('Setting up events');
 
         $(document).on("change", ".settingsChanger", function () {
@@ -1561,15 +1641,27 @@
             saveOptions();
         });
 
+        $(document).on('roa-ws:mychans', (e, d) => {
+            for (let channel of d.channels) {
+                channelListCache[channel.name] = channel;
+            }
+        });
+
         $(document).on("click", ".channelTab", function () {
             $(".channelTab").removeClass("chTabSelected");
             let channelID                          = $(this).attr("data-channel");
             channelLog[channelID].newMessages      = false;
             channelLog[channelID].newMessagesCount = 0;
             updateChannelList(channelLog[channelID]);
-            // $(".processed").hide();
-            $("#chatMessageList > li:not(.hidden)").addClass("hidden");
-            $(".chc_" + channelID).removeClass("hidden");
+            let cms = $('#chatMessageList');
+                cms.find('li').remove();
+                console.log(channelLog[channelID].messageHistory.getMessageCount());
+                console.log(channelLog[channelID].messageHistory.getMessages());
+                channelLog[channelID].messageHistory.getMessages().forEach(m => {
+                    cms.append(m);
+                });
+            // $("#chatMessageList > li:not(.hidden)").addClass("hidden");
+            // $(".chc_" + channelID).removeClass("hidden");
             $("#channelTab" + channelID).addClass("chTabSelected");
             $("#channelPreviewWrapper").hide();
             currentChannel = channelID;
@@ -1591,6 +1683,37 @@
                 }, 500);
             }
         });
+
+        // $(document).on("click", ".channelTab", function () {
+        //     $(".channelTab").removeClass("chTabSelected");
+        //     let channelID                          = $(this).attr("data-channel");
+        //     channelLog[channelID].newMessages      = false;
+        //     channelLog[channelID].newMessagesCount = 0;
+        //     updateChannelList(channelLog[channelID]);
+        //     // $(".processed").hide();
+        //     $("#chatMessageList > li:not(.hidden)").addClass("hidden");
+        //     $(".chc_" + channelID).removeClass("hidden");
+        //     $("#channelTab" + channelID).addClass("chTabSelected");
+        //     $("#channelPreviewWrapper").hide();
+        //     currentChannel = channelID;
+        //     if (channelID.match(/^[0-9]+$/) === null) {
+        //         let groupName = channelLog[channelID].channelName;
+        //         if (options.channelsSettings.channelMerger.groups.indexOf(groupName) !== -1) {
+        //             if (typeof options.channelsSettings.channelMerger.defaultChannels[groupName] !== "undefined") {
+        //                 channelID = resolveChannelID(options.channelsSettings.channelMerger.defaultChannels[groupName]).cID;
+        //             }
+        //         }
+        //     }
+        //     let channelOption = $("#chatChannel option[value=" + channelID + "]");
+        //     if (channelOption.length > 0) {
+        //         $("#chatChannel").val(channelID);
+        //     }
+        //     if (options.scriptSettings.chat_direction === "down") {
+        //         setTimeout(function () {
+        //             scrollToBottom("#chatMessageListWrapper");
+        //         }, 500);
+        //     }
+        // });
 
         $(document).on("click", "#CPAReset, #chTabCTMenuReset", function () {
             resetUnreadCount();
@@ -1633,7 +1756,6 @@
 
         $(document).on("click", "#chTabCTMenuColor", function () {
             if (hoveringOverTab.indexOf(MergedChannelsGroup) !== -1) {
-
                 channelLog[hoveringOverTab].channelColor = randomColor();
                 updateChannelList(channelLog[hoveringOverTab]);
             } else {
@@ -1683,11 +1805,11 @@
                 top: ($(this).offset().top + 25) + "px"
             };
             let previewContent = "There are no new messages in this channel!";
-            if (channelLog[channelID].newMessages === true) {
+            if (channelLog[channelID].newMessages === true && channelLog[channelID].messageHistory.getMessageCount() > 0) {
                 let previewMessages = [];
-                $(".chc_" + channelID).each(function (i, e) {
+                $(channelLog[channelID].messageHistory.getMessages()).each(function (i, e) {
                     if (i < channelLog[channelID].newMessagesCount) {
-                        previewMessages.push($(e).html());
+                        previewMessages.push(e.html());
                     }
                 });
                 previewContent = previewMessages.join("<br>");
@@ -1700,10 +1822,7 @@
             } else {
                 cssOptions.left = ($(this).offset().left) + "px";
             }
-            channelPreviewWrapper
-                .css(cssOptions)
-                .children("h5")
-                .text("'" + channelName + "' preview");
+            channelPreviewWrapper.css(cssOptions).children('h5').text(`"${channelName}" preview`);
 
             if (options.scriptSettings.preview_reset) {
                 $("#CPAReset").show();
@@ -1730,13 +1849,14 @@
                 let channelPreviewWrapper = $("#channelPreviewWrapper");
                 // let shouldShow            = channelLog[hoveringOverTab].newMessages === true;
                 let shouldShow            = true;
-                let OpenAndKeep           = $(e.target).closest(channelTab).length || $(e.target).closest(channelPreviewWrapper).length;
+                let OpenAndKeep           = $(e.target).closest(channelTab).length || $(e.target)
+                    .closest(channelPreviewWrapper).length;
                 let delay                 = OpenAndKeep ? 500 : 250;
 
                 hovering = setTimeout(function () {
                     if (options.scriptSettings.preview && OpenAndKeep && shouldShow) {
                         channelPreviewWrapper.show(0, function () {
-                            if (options.scriptSettings.chat_direction === "down") {
+                            if (options.scriptSettings.chat_direction === 'down') {
                                 scrollToBottom('#channelPreviewContent');
                             }
                         });
@@ -2032,7 +2152,7 @@
                                 $("#chatMessageList li").attr("class", "");
                                 saveOptions();
                                 $("#channelTabList > div:nth-child(2)").click();
-                                loadMessages("reload");
+                                // loadMessages("reload");
                                 $("#ToASettings").click();
                             }
                         },
@@ -2063,33 +2183,27 @@
 
     function init() {
         loadOptions();
-        setuEvents();
+        setupEvents();
         loadDependencies();
         prepareHTML();
         addSettingsTab();
         addPersistentChannels();
-        log('Starting chat monitor loop');
         loadMessages();
+        // log('Starting chat monitor loop');
+        // doubleCheckUnprocessed();
         populateChangelog();
 
         // TODO: many channels horizontal scroll
-        $("#channelTabList").sortable(
-            {
-                items   : ".channelTab",
-                distance: 5,
-                update  : savePersistentChannels
-            }
-        );
+        $("#channelTabList").sortable({
+            items   : ".channelTab",
+            distance: 5,
+            update  : savePersistentChannels,
+            containment: 'parent'
+        });
         $("#channelTabList").disableSelection();
-        setTimeout(function () {
-            $("#channelTabList > div:nth-child(2)").click();
-        }, 5000);
         checkForUpdateTimer = setTimeout(checkForUpdate, 10000);
     }
 
-    if (typeof GM_info !== 'object') {
-        init();
-    } else {
-        window.addEventListener('load', init, {once: true});
-    }
+    init();
+
 }(jQuery));
