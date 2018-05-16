@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TabsOfAvabur
 // @namespace    Reltorakii.magic
-// @version      4.4.0-alpha
+// @version      4.4.0-alpha-2
 // @description  Tabs the channels it finds in chat, can be sorted, with notif for new messages
 // @author       Reltorakii
 // @match        http*://*.avabur.com/game*
@@ -48,7 +48,7 @@
             mutedChannels     : [],
             persistentChannels: []
         },
-        version         : typeof GM_info === "object" ? GM_info.script.version : '4.4.0-alpha'
+        version         : typeof GM_info === "object" ? GM_info.script.version : '4.4.0-alpha-2'
     };
 
     let groupsMap             = {};
@@ -1392,12 +1392,19 @@
             });
     }
 
-    function processMessage(e) {
-        // console.log($("#chatChannel option").length);
-        let element = $(e);
-        if (element.hasClass('processed')) {
-            return ;
+
+    HTMLElement.prototype.getToAChannelInfo = function() {
+        let e = this;
+
+        if (e.nodeName !== 'LI') {
+            return null;
         }
+
+        if (e.hasAttribute('data-tocid')) {
+            return e.getAttribute('data-toacid');
+        }
+
+        let element = $(e);
 
         let plainText   = element.text();
         // lets get rid of staff stuff
@@ -1474,9 +1481,29 @@
 
             channelID = channelInfo.cID;
         }
+
         if (channelID === CMDResposeChannel) {
             channel = "Info Channel";
         }
+
+        return {
+            channelID: channelID,
+            channel: channel,
+            plainText: plainText,
+            channelInfo: channelInfo
+        };
+    };
+
+    function processMessage(e) {
+        if (e.classList.contains('processed')) {
+            return false;
+        }
+        // let element = $(e);
+        let element = e;
+
+
+        let {channelID, channel, plainText, channelInfo} = element.getToAChannelInfo();
+
         let channelColor = resolveChannelColor(channelID, channelInfo.name);
 
         if (typeof options.channelsSettings.channelMerger.mapping[channel] !== "undefined") {
@@ -1494,8 +1521,12 @@
         // if (currentChannel != channelID) {
         // element.addClass("hidden");
         // }
-        element.addClass("processed");
-        element.addClass("chc_" + channelID);
+        // element.addClass("processed");
+        // element.addClass("chc_" + channelID);
+        // element.attr('data-toacid', channelID);
+        element.classList.add("processed");
+        element.classList.add("chc_" + channelID);
+        element.setAttribute('data-toacid', channelID);
         if (!channelLog.hasOwnProperty(channelID)) {
             createChannelEntry(channel, channelID, channelColor);
         }
@@ -1510,21 +1541,17 @@
         // }
 
         if (options.scriptSettings.at_username) {
-            element.html(element.html().replace(/\@([a-zA-Z]+)/g, "@<a class=\"profileLink\">$1</a>"));
+            element.innerHTML = element.innerHTML.replace(/\@([a-z]+)/gi, "@<a class=\"profileLink\">$1</a>");
         }
 
         if (options.scriptSettings.join_channel_link) {
-            element.html(
-                element
-                    .html()
-                    .replace(
-                        /\/join\s+([^\s]+)\s*([^\s<]+)?/,
-                        `/join <a class="joinChannel">$1</a> <span class="jcPWD">$2</span>`
-                    )
+            element.innerHTML = element.innerHTML.replace(
+                /\/join\s+([^\s]+)\s*([^\s<]+)?/,
+                `/join <a class="joinChannel">$1</a> <span class="jcPWD">$2</span>`
             );
         }
-
-        channelLog[channelID].messageHistory.addMessage(element);
+        let temp = $(element);
+        channelLog[channelID].messageHistory.addMessage(temp);
         if (channelID != currentChannel) {
             // console.log(`rem cos c:"${currentChannel}" != r:"${channelID}" (${element.text()})`);
             element.remove();
@@ -1655,8 +1682,6 @@
             updateChannelList(channelLog[channelID]);
             let cms = $('#chatMessageList');
                 cms.find('li').remove();
-                console.log(channelLog[channelID].messageHistory.getMessageCount());
-                console.log(channelLog[channelID].messageHistory.getMessages());
                 channelLog[channelID].messageHistory.getMessages().forEach(m => {
                     cms.append(m);
                 });
