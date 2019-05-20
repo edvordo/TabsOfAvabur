@@ -1066,7 +1066,9 @@
     }
 
     function saveOptions() {
-        clearTimeout(SSN);
+        if (typeof SSN !== 'undefined' && SSN > 0) {
+          clearTimeout(SSN);
+        }
         let opts = JSON.stringify(options);
         localStorage.setItem("ToAOPTS", opts);
         $("#ToASettingsSaved").show();
