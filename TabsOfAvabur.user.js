@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TabsOfAvabur
 // @namespace    Reltorakii.magic
-// @version      4.5.3
+// @version      4.5.4
 // @description  Tabs the channels it finds in chat, can be sorted, with notif for new messages
 // @author       Reltorakii
 // @match        http*://*.avabur.com/game*
@@ -107,6 +107,21 @@
             }
         }
 
+        function __isDuplicate(message) {
+            // Use id if available
+            if (message.attr('id')) {
+                if (messages.find(msg => msg.attr('id') === message.attr('id'))) {
+                    return true;
+                }
+            } else {
+
+                if (messages.find(msg => msg.text() === message.text())) {
+                    return true;
+                }
+            }
+            return false
+        }
+
         function __getMessages() {
             return messages;
         }
@@ -128,7 +143,8 @@
             getMessages    : __getMessages,
             clearMessages  : __clearMessages,
             getMessageCount: __getMessageCount,
-            reverseMessages: __reverseMessages
+            reverseMessages: __reverseMessages,
+            isDuplicate    : __isDuplicate
         };
     }
 
@@ -1561,6 +1577,12 @@
             );
         }
         let temp = $(element);
+        let duplicate = channelLog[channelID].messageHistory.isDuplicate(temp);
+        if (duplicate) {
+            element.remove();
+            return;
+        }
+
         channelLog[channelID].messageHistory.addMessage(temp);
         if (channelID != currentChannel) {
             element.remove();
