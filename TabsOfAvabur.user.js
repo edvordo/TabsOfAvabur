@@ -1,15 +1,15 @@
 // ==UserScript==
 // @name         TabsOfAvabur
 // @namespace    Reltorakii.magic
-// @version      4.5.3
+// @version      4.5.4
 // @description  Tabs the channels it finds in chat, can be sorted, with notif for new messages
 // @author       Reltorakii
 // @match        http*://*.avabur.com/game*
 // @downloadURL  https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js
 // @updateURL    https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js
-// @require      https://cdn.rawgit.com/omichelsen/compare-versions/v3.1.0/index.js
-// @require      https://cdn.rawgit.com/markdown-it/markdown-it/8.4.1/dist/markdown-it.min.js
-// @require      https://cdn.rawgit.com/markdown-it/markdown-it-emoji/1.4.0/dist/markdown-it-emoji.min.js
+// @require      https://cdn.jsdelivr.net/gh/omichelsen/compare-versions@3.1.0/index.js
+// @require      https://cdn.jsdelivr.net/gh/markdown-it/markdown-it@8.4.1/dist/markdown-it.min.js
+// @require      https://cdn.jsdelivr.net/gh/markdown-it/markdown-it-emoji@1.4.0/dist/markdown-it-emoji.min.js
 // @grant        none
 // @run-at       document-idle
 // ==/UserScript==
@@ -1033,7 +1033,7 @@
         $("<style>").text(` 
 #channelTabListWrapper {margin-bottom: -1px;position: relative;}
 #channelTabList {overflow: hidden;border-radius: 4px 4px 0 0;font-size: 9pt;}
-.ToASettings, .channelTab {cursor: pointer;margin: 2px 2px 0 2px;border-radius: 4px 4px 0 0;display: inline-block;padding: 2px 5px;position:relative;}
+.ToASettings, #channelTabList .channelTab {cursor: pointer;margin: 2px 2px 0 2px;border-radius: 4px 4px 0 0;display: inline-block;padding: 2px 5px;position:relative;}
 #chatMessageList li:not(.processed) {display: none;}
 /*#chatMessageList li.processed{display: list-item;}*/
 .ChBadge {display:inline-block;margin-left:3px;padding:1px 4px;font-size:7pt;vertical-align:top;border-color:green!important;color:#fff !important;}
