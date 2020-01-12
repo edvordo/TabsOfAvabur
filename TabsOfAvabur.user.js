@@ -7,9 +7,9 @@
 // @match        http*://*.avabur.com/game*
 // @downloadURL  https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js
 // @updateURL    https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js
-// @require      https://cdn.rawgit.com/omichelsen/compare-versions/v3.1.0/index.js
-// @require      https://cdn.rawgit.com/markdown-it/markdown-it/8.4.1/dist/markdown-it.min.js
-// @require      https://cdn.rawgit.com/markdown-it/markdown-it-emoji/1.4.0/dist/markdown-it-emoji.min.js
+// @require      https://cdn.jsdelivr.net/gh/omichelsen/compare-versions@3.1.0/index.js
+// @require      https://cdn.jsdelivr.net/gh/markdown-it/markdown-it@8.4.1/dist/markdown-it.min.js
+// @require      https://cdn.jsdelivr.net/gh/markdown-it/markdown-it-emoji@1.4.0/dist/markdown-it-emoji.min.js
 // @grant        none
 // @run-at       document-idle
 // ==/UserScript==
@@ -107,21 +107,6 @@
             }
         }
 
-        function __isDuplicate(message) {
-            // Use id if available
-            if (message.attr('id')) {
-                if (messages.find(msg => msg.attr('id') === message.attr('id'))) {
-                    return true;
-                }
-            } else {
-
-                if (messages.find(msg => msg.text() === message.text())) {
-                    return true;
-                }
-            }
-            return false
-        }
-
         function __getMessages() {
             return messages;
         }
@@ -143,8 +128,7 @@
             getMessages    : __getMessages,
             clearMessages  : __clearMessages,
             getMessageCount: __getMessageCount,
-            reverseMessages: __reverseMessages,
-            isDuplicate    : __isDuplicate
+            reverseMessages: __reverseMessages
         };
     }
 
@@ -1049,7 +1033,7 @@
         $("<style>").text(` 
 #channelTabListWrapper {margin-bottom: -1px;position: relative;}
 #channelTabList {overflow: hidden;border-radius: 4px 4px 0 0;font-size: 9pt;}
-.ToASettings, .channelTab {cursor: pointer;margin: 2px 2px 0 2px;border-radius: 4px 4px 0 0;display: inline-block;padding: 2px 5px;position:relative;}
+.ToASettings, #channelTabList .channelTab {cursor: pointer;margin: 2px 2px 0 2px;border-radius: 4px 4px 0 0;display: inline-block;padding: 2px 5px;position:relative;}
 #chatMessageList li:not(.processed) {display: none;}
 /*#chatMessageList li.processed{display: list-item;}*/
 .ChBadge {display:inline-block;margin-left:3px;padding:1px 4px;font-size:7pt;vertical-align:top;border-color:green!important;color:#fff !important;}
@@ -1577,12 +1561,6 @@
             );
         }
         let temp = $(element);
-        let duplicate = channelLog[channelID].messageHistory.isDuplicate(temp);
-        if (duplicate) {
-            element.remove();
-            return;
-        }
-
         channelLog[channelID].messageHistory.addMessage(temp);
         if (channelID != currentChannel) {
             element.remove();
