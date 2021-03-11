@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name         TabsOfAvabur
 // @namespace    Reltorakii.magic
-// @version      4.5.4
+// @version      4.5.5
 // @description  Tabs the channels it finds in chat, can be sorted, with notif for new messages
 // @author       Reltorakii
-// @match        http*://*.avabur.com/game*
+// @match        https://*.avabur.com/game*
+// @includes     https://*.avabur.com/game*
 // @downloadURL  https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js
 // @updateURL    https://github.com/edvordo/TabsOfAvabur/raw/master/TabsOfAvabur.user.js
 // @require      https://cdn.jsdelivr.net/gh/omichelsen/compare-versions@3.1.0/index.js
