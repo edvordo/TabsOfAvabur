@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TabsOfAvabur
 // @namespace    Reltorakii.magic
-// @version      4.5.6
+// @version      4.5.7
 // @description  Tabs the channels it finds in chat, can be sorted, with notif for new messages
 // @author       Reltorakii
 // @match        https://*.avabur.com/game*
@@ -1299,7 +1299,11 @@
         if (!options.scriptSettings.profile_tooltip_mention) {
             return false;
         }
-        $("#chatMessage").append(" @" + $("#profileOptionTooltip").attr("data-username")).focus();
+
+        const toAppend = " @" + $("#profileOptionTooltip").attr("data-username");
+        const originalMessage = $("#chatMessage").html().replace(/<br>$/, '');
+        
+        $("#chatMessage").html(`${originalMessage}${toAppend}`).focus();
         $("#profileOptionTooltip").hide();
     }
 
